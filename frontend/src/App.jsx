@@ -1,11 +1,8 @@
-import React from 'react'
+import React from 'react';
+import LandingPageFlow from './LandingPageFlow';
 
 const App = () => {
-  return (
-    <div>
-      
-    </div>
-  )
-}
+  return <LandingPageFlow />;
+};
 
-export default App
+export default App;
