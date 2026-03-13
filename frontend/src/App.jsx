@@ -1,8 +1,15 @@
 import React from 'react';
-import LandingPageFlow from './LandingPageFlow';
+import { Routes, Route } from 'react-router-dom';
+import LandingPage from './pages/LandingPage.jsx';
 
 const App = () => {
-  return <LandingPageFlow />;
+  return (
+    <Routes>
+      {/* Landing page route */}
+      <Route path="/" element={<LandingPage />} />
+    </Routes>
+  );
 };
 
 export default App;
+
