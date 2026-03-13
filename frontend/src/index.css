@@ -43,7 +43,7 @@ a {
   background: radial-gradient(circle at top left, rgba(59, 130, 246, 0.35), transparent),
     radial-gradient(circle at bottom right, rgba(147, 51, 234, 0.4), transparent),
     rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(18px);
+  backdrop-filter: blur(1px);
 }
 
 .landing__nav {

@@ -6,7 +6,7 @@ const LandingPage = () => {
       <div className="landing__video-layer">
         <video
           className="landing__video"
-          src="https://videos.pexels.com/video-files/2611250/2611250-sd_640_360_25fps.mp4"
+          src="/videos/bgvid1.mp4"
           autoPlay
           loop
           muted
