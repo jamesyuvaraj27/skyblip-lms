@@ -1,6 +1,10 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import Navbar from '../components/Navbar.jsx';
 
 const LandingPage = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="landing">
       <div className="landing__video-layer">
@@ -15,18 +19,7 @@ const LandingPage = () => {
         <div className="landing__video-overlay" />
       </div>
 
-      <header className="landing__nav">
-        <div className="landing__logo">Skyblip LMS</div>
-        <nav className="landing__nav-links">
-          <a href="#how-it-works">How it works</a>
-          <a href="#practice">Practice</a>
-          <a href="#roles">For who?</a>
-        </nav>
-        <div className="landing__nav-cta">
-          <button className="btn btn--ghost">Log in</button>
-          <button className="btn btn--primary">Get started</button>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="landing__content">
         <section className="landing__hero" id="hero">
@@ -43,8 +36,12 @@ const LandingPage = () => {
               workspace.
             </p>
             <div className="hero__actions">
-              <button className="btn btn--primary">Start solving problems</button>
-              <button className="btn btn--ghost">Browse courses</button>
+              <button className="btn btn--primary" onClick={() => navigate('/login')}>
+                Start solving problems
+              </button>
+              <button className="btn btn--ghost" onClick={() => navigate('/login')}>
+                Browse courses
+              </button>
             </div>
             <div className="hero__meta">
               <span>⏱ 5‑minute signup</span>
@@ -170,8 +167,12 @@ const LandingPage = () => {
               without changing the experience users see today.
             </p>
             <div className="hero__actions">
-              <button className="btn btn--primary">Start as student</button>
-              <button className="btn btn--ghost">I&apos;m an instructor</button>
+              <button className="btn btn--primary" onClick={() => navigate('/register')}>
+                Start as student
+              </button>
+              <button className="btn btn--ghost" onClick={() => navigate('/login')}>
+                I&apos;m an instructor
+              </button>
             </div>
           </div>
         </section>
