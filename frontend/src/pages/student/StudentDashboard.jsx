@@ -2,28 +2,22 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
 
 const StudentDashboard = () => {
-  const { token, apiBase } = useAuth();
+  const { token } = useAuth();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchOverview = async () => {
-      try {
-        const res = await fetch(`${apiBase}/api/student/overview`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await res.json();
-        setStats(data);
-      } catch {
-        setStats(null);
-      } finally {
-        setLoading(false);
-      }
+    // Mock data - no backend call
+    const mockStats = {
+      enrolledCourses: 3,
+      avgProgress: 65,
+      solvedProblems: 12,
+      totalProblems: 25,
+      streak: 5
     };
-    if (token) {
-      fetchOverview();
-    }
-  }, [apiBase, token]);
+    setStats(mockStats);
+    setLoading(false);
+  }, []);
 
   if (loading) return <div>Loading dashboard...</div>;
 

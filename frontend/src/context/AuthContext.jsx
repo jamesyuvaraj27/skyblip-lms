@@ -2,8 +2,6 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 
 const AuthContext = createContext(null);
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000';
-
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
@@ -24,39 +22,55 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
-    const res = await fetch(`${API_BASE}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.message || 'Failed to login');
+    // Local authentication - no backend call
+    // Simple validation: any email/password combination works
+    if (!email || !password) {
+      throw new Error('Email and password are required');
     }
-    const data = await res.json();
-    setUser(data.user);
-    setToken(data.token);
-    localStorage.setItem('skyblip_token', data.token);
-    localStorage.setItem('skyblip_user', JSON.stringify(data.user));
-    return data.user;
+    
+    // Generate a mock token
+    const mockToken = `token_${Date.now()}`;
+    const mockUser = {
+      id: `user_${Date.now()}`,
+      email,
+      name: email.split('@')[0],
+      role: 'student',
+      bio: '',
+      createdAt: new Date().toISOString()
+    };
+    
+    setUser(mockUser);
+    setToken(mockToken);
+    localStorage.setItem('skyblip_token', mockToken);
+    localStorage.setItem('skyblip_user', JSON.stringify(mockUser));
+    return mockUser;
   };
 
   const register = async (name, email, password) => {
-    const res = await fetch(`${API_BASE}/api/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password })
-    });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.message || 'Failed to register');
+    // Local registration - no backend call
+    if (!name || !email || !password) {
+      throw new Error('All fields are required');
     }
-    const data = await res.json();
-    setUser(data.user);
-    setToken(data.token);
-    localStorage.setItem('skyblip_token', data.token);
-    localStorage.setItem('skyblip_user', JSON.stringify(data.user));
-    return data.user;
+    if (password.length < 6) {
+      throw new Error('Password must be at least 6 characters');
+    }
+    
+    // Generate a mock token
+    const mockToken = `token_${Date.now()}`;
+    const mockUser = {
+      id: `user_${Date.now()}`,
+      email,
+      name,
+      role: 'student',
+      bio: '',
+      createdAt: new Date().toISOString()
+    };
+    
+    setUser(mockUser);
+    setToken(mockToken);
+    localStorage.setItem('skyblip_token', mockToken);
+    localStorage.setItem('skyblip_user', JSON.stringify(mockUser));
+    return mockUser;
   };
 
   const logout = () => {
@@ -72,8 +86,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     login,
     register,
-    logout,
-    apiBase: API_BASE
+    logout
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

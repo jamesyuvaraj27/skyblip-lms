@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
 
 const Settings = () => {
-  const { token, apiBase } = useAuth();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [message, setMessage] = useState('');
@@ -10,16 +9,19 @@ const Settings = () => {
   const updatePassword = async (e) => {
     e.preventDefault();
     setMessage('');
-    const res = await fetch(`${apiBase}/api/student/settings/password`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({ currentPassword, newPassword })
-    });
-    const data = await res.json();
-    setMessage(data.message || 'Saved');
+    // Local password update - no backend call
+    if (!currentPassword || !newPassword) {
+      setMessage('Both fields are required');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setMessage('New password must be at least 6 characters');
+      return;
+    }
+    // Simulate password update
+    setMessage('Password updated successfully');
+    setCurrentPassword('');
+    setNewPassword('');
   };
 
   return (

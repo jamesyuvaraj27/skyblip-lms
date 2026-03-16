@@ -3,19 +3,22 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 
 const ProblemList = () => {
-  const { token, apiBase } = useAuth();
+  const { token } = useAuth();
   const [problems, setProblems] = useState([]);
 
   useEffect(() => {
-    const fetchProblems = async () => {
-      const res = await fetch(`${apiBase}/api/problems`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      setProblems(data);
-    };
-    if (token) fetchProblems();
-  }, [apiBase, token]);
+    // Mock problem data - no backend call
+    const mockProblems = [
+      { id: 1, title: 'Two Sum', category: 'Arrays', difficulty: 'Easy' },
+      { id: 2, title: 'Reverse String', category: 'Strings', difficulty: 'Easy' },
+      { id: 3, title: 'Merge Intervals', category: 'Arrays', difficulty: 'Medium' },
+      { id: 4, title: 'Longest Palindrome', category: 'Strings', difficulty: 'Medium' },
+      { id: 5, title: 'Climb Stairs', category: 'DP', difficulty: 'Easy' },
+      { id: 6, title: 'Coin Change', category: 'DP', difficulty: 'Medium' },
+      { id: 7, title: 'Word Break', category: 'DP', difficulty: 'Hard' }
+    ];
+    setProblems(mockProblems);
+  }, [token]);
 
   return (
     <div className="problems-page">

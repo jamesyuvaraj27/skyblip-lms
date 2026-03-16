@@ -3,19 +3,36 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { Link } from 'react-router-dom';
 
 const MyCourses = () => {
-  const { token, apiBase } = useAuth();
+  const { token } = useAuth();
   const [items, setItems] = useState([]);
 
   useEffect(() => {
-    const fetchCourses = async () => {
-      const res = await fetch(`${apiBase}/api/student/courses`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      setItems(data);
-    };
-    if (token) fetchCourses();
-  }, [apiBase, token]);
+    // Mock course data - no backend call
+    const mockCourses = [
+      {
+        id: 1,
+        courseId: 1,
+        courseTitle: 'JavaScript Fundamentals',
+        thumbnail: 'https://via.placeholder.com/300x150?text=JavaScript',
+        progressPercent: 75
+      },
+      {
+        id: 2,
+        courseId: 2,
+        courseTitle: 'Data Structures & Algorithms',
+        thumbnail: 'https://via.placeholder.com/300x150?text=DSA',
+        progressPercent: 45
+      },
+      {
+        id: 3,
+        courseId: 3,
+        courseTitle: 'React Advanced Patterns',
+        thumbnail: 'https://via.placeholder.com/300x150?text=React',
+        progressPercent: 30
+      }
+    ];
+    setItems(mockCourses);
+  }, [token]);
 
   return (
     <div className="my-courses-page">
