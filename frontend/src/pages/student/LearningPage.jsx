@@ -2,19 +2,76 @@ import React, { useEffect, useState } from 'react';
 import { Link, Route, Routes, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 
-const LessonDetail = ({ lessonId, apiBase, token }) => {
+// Mock lessons data
+const mockLessonsData = {
+  1: {
+    id: 1,
+    title: 'What Are Variables?',
+    content: 'Variables are containers for storing data values. In JavaScript, you can declare variables using let, const, or var keywords. Variables help you store and manage data throughout your program.',
+    videoUrl: 'https://via.placeholder.com/640x480?text=Lesson+1+Video'
+  },
+  2: {
+    id: 2,
+    title: 'Working with Arrays',
+    content: 'Arrays are used to store multiple values in a single variable. They are useful for grouping data of the same type. You can access elements using their index (0-based).',
+    videoUrl: 'https://via.placeholder.com/640x480?text=Lesson+2+Video'
+  },
+  3: {
+    id: 3,
+    title: 'Functions and Scope',
+    content: 'Functions are reusable blocks of code. They help you organize your code and make it more maintainable. Understanding scope is important for managing variable accessibility.',
+    videoUrl: 'https://via.placeholder.com/640x480?text=Lesson+3+Video'
+  }
+};
+
+// Mock course data
+const mockCoursesData = {
+  1: {
+    id: 1,
+    title: 'JavaScript Fundamentals',
+    description: 'Learn the basics of JavaScript programming from scratch.',
+    modules: [
+      {
+        id: 1,
+        title: 'Module 1: Getting Started',
+        lessons: [
+          { id: 1, title: 'What Are Variables?' },
+          { id: 2, title: 'Working with Arrays' }
+        ]
+      },
+      {
+        id: 2,
+        title: 'Module 2: Advanced Topics',
+        lessons: [
+          { id: 3, title: 'Functions and Scope' }
+        ]
+      }
+    ]
+  },
+  2: {
+    id: 2,
+    title: 'Data Structures & Algorithms',
+    description: 'Master DSA concepts for coding interviews.',
+    modules: [
+      {
+        id: 3,
+        title: 'Module 1: Basics',
+        lessons: [
+          { id: 4, title: 'What is Big O?' }
+        ]
+      }
+    ]
+  }
+};
+
+const LessonDetail = ({ lessonId }) => {
   const [lesson, setLesson] = useState(null);
 
   useEffect(() => {
-    const fetchLesson = async () => {
-      const res = await fetch(`${apiBase}/api/lessons/${lessonId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      setLesson(data);
-    };
-    if (lessonId) fetchLesson();
-  }, [apiBase, lessonId, token]);
+    // Mock fetch - no backend call
+    const mockLesson = mockLessonsData[lessonId] || mockLessonsData[1];
+    setLesson(mockLesson);
+  }, [lessonId]);
 
   if (!lesson) return <div>Select a lesson to start learning.</div>;
 
@@ -31,19 +88,14 @@ const LessonDetail = ({ lessonId, apiBase, token }) => {
 
 const LearningPage = () => {
   const { courseId } = useParams();
-  const { token, apiBase } = useAuth();
+  const { token } = useAuth();
   const [course, setCourse] = useState(null);
 
   useEffect(() => {
-    const fetchCourse = async () => {
-      const res = await fetch(`${apiBase}/api/courses/${courseId}/learning`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      setCourse(data);
-    };
-    if (token && courseId) fetchCourse();
-  }, [apiBase, courseId, token]);
+    // Mock fetch - no backend call
+    const mockCourse = mockCoursesData[courseId] || mockCoursesData[1];
+    setCourse(mockCourse);
+  }, [courseId, token]);
 
   if (!course) return <div>Loading course...</div>;
 
@@ -83,7 +135,7 @@ const LearningPage = () => {
             path="/"
             element={
               firstLessonId ? (
-                <LessonDetail lessonId={firstLessonId} apiBase={apiBase} token={token} />
+                <LessonDetail lessonId={firstLessonId} />
               ) : (
                 <div>No lessons configured for this course yet.</div>
               )
@@ -94,7 +146,7 @@ const LearningPage = () => {
             element={
               <LessonRouteWrapper>
                 {(lessonId) => (
-                  <LessonDetail lessonId={lessonId} apiBase={apiBase} token={token} />
+                  <LessonDetail lessonId={lessonId} />
                 )}
               </LessonRouteWrapper>
             }

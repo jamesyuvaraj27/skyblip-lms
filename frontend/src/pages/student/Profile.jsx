@@ -2,38 +2,29 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
 
 const Profile = () => {
-  const { token, apiBase, user } = useAuth();
+  const { user } = useAuth();
   const [profile, setProfile] = useState(user);
   const [bio, setBio] = useState(user?.bio || '');
   const [name, setName] = useState(user?.name || '');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const fetchMe = async () => {
-      const res = await fetch(`${apiBase}/api/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      setProfile(data);
-      setName(data.name);
-      setBio(data.bio || '');
-    };
-    if (token) fetchMe();
-  }, [apiBase, token]);
+    // Use local user state - no backend call
+    if (user) {
+      setProfile(user);
+      setName(user.name);
+      setBio(user.bio || '');
+    }
+  }, [user]);
 
   const saveProfile = async () => {
     setSaving(true);
     try {
-      const res = await fetch(`${apiBase}/api/student/profile`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ name, bio })
-      });
-      const data = await res.json();
-      setProfile(data);
+      // Local save - no backend call
+      const updatedProfile = { ...profile, name, bio };
+      setProfile(updatedProfile);
+      // Update localStorage
+      localStorage.setItem('skyblip_user', JSON.stringify(updatedProfile));
     } finally {
       setSaving(false);
     }

@@ -2,36 +2,73 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 
+// Mock quizzes data
+const mockQuizzesData = {
+  1: {
+    id: 1,
+    title: 'Arrays Basics Quiz',
+    durationMinutes: 15,
+    questions: [
+      {
+        id: 1,
+        question: 'What is the time complexity of accessing an element by index in an array?',
+        options: ['O(n)', 'O(1)', 'O(log n)', 'O(n²)']
+      },
+      {
+        id: 2,
+        question: 'Which method adds an element to the end of an array?',
+        options: ['push()', 'pop()', 'shift()', 'unshift()']
+      },
+      {
+        id: 3,
+        question: 'What is the index of the first element in an array?',
+        options: ['1', '0', '-1', 'undefined']
+      }
+    ]
+  },
+  2: {
+    id: 2,
+    title: 'Strings Advanced Quiz',
+    durationMinutes: 20,
+    questions: [
+      {
+        id: 4,
+        question: 'Are strings in JavaScript mutable?',
+        options: ['Yes', 'No', 'Sometimes', 'It depends']
+      },
+      {
+        id: 5,
+        question: 'How do you find the length of a string?',
+        options: ['str.size', 'str.length', 'len(str)', 'str.count']
+      }
+    ]
+  }
+};
+
 const QuizPage = () => {
   const { quizId } = useParams();
-  const { token, apiBase } = useAuth();
+  const { token } = useAuth();
   const [quiz, setQuiz] = useState(null);
   const [answers, setAnswers] = useState([]);
   const [result, setResult] = useState(null);
 
   useEffect(() => {
-    const fetchQuiz = async () => {
-      const res = await fetch(`${apiBase}/api/quizzes/${quizId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      setQuiz(data);
-      setAnswers(new Array(data.questions.length).fill(null));
-    };
-    if (token && quizId) fetchQuiz();
-  }, [apiBase, quizId, token]);
+    // Mock fetch - no backend call
+    const mockQuiz = mockQuizzesData[quizId] || mockQuizzesData[1];
+    setQuiz(mockQuiz);
+    setAnswers(new Array(mockQuiz.questions.length).fill(null));
+  }, [quizId, token]);
 
   const submitQuiz = async () => {
-    const res = await fetch(`${apiBase}/api/quizzes/${quizId}/submit`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({ answers })
-    });
-    const data = await res.json();
-    setResult(data);
+    // Mock submission - no backend call
+    const scoreCount = answers.filter((ans) => ans !== null).length;
+    const totalQuestions = quiz.questions.length;
+    const mockResult = {
+      score: scoreCount,
+      total: totalQuestions,
+      percentage: Math.round((scoreCount / totalQuestions) * 100)
+    };
+    setResult(mockResult);
   };
 
   if (!quiz) return <div>Loading quiz...</div>;
@@ -43,7 +80,7 @@ const QuizPage = () => {
           <h2>{quiz.title}</h2>
           <p className="muted">
             Timed MCQ quiz linked to your course. Answers are stored as quiz results in the
-            backend.
+            frontend.
           </p>
         </div>
         <div className="quiz-meta">
@@ -84,7 +121,7 @@ const QuizPage = () => {
         <div className="quiz-result">
           <h3>Result</h3>
           <p>
-            Score: {result.score} / {result.total}
+            Score: {result.score} / {result.total} ({result.percentage}%)
           </p>
           <p className="muted">
             In the full system, this would also unlock certificates and feed into analytics and
