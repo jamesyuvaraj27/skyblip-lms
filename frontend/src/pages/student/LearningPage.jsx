@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Link, Route, Routes, useParams } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext.jsx';
+import { useAuth } from '../../context/useAuth.js';
 
 // Mock lessons data
 const mockLessonsData = {
@@ -65,13 +65,10 @@ const mockCoursesData = {
 };
 
 const LessonDetail = ({ lessonId }) => {
-  const [lesson, setLesson] = useState(null);
-
-  useEffect(() => {
-    // Mock fetch - no backend call
-    const mockLesson = mockLessonsData[lessonId] || mockLessonsData[1];
-    setLesson(mockLesson);
-  }, [lessonId]);
+  const lesson = useMemo(
+    () => mockLessonsData[lessonId] || mockLessonsData[1],
+    [lessonId]
+  );
 
   if (!lesson) return <div>Select a lesson to start learning.</div>;
 
@@ -88,14 +85,11 @@ const LessonDetail = ({ lessonId }) => {
 
 const LearningPage = () => {
   const { courseId } = useParams();
-  const { token } = useAuth();
-  const [course, setCourse] = useState(null);
-
-  useEffect(() => {
-    // Mock fetch - no backend call
-    const mockCourse = mockCoursesData[courseId] || mockCoursesData[1];
-    setCourse(mockCourse);
-  }, [courseId, token]);
+  useAuth();
+  const course = useMemo(
+    () => mockCoursesData[courseId] || mockCoursesData[1],
+    [courseId]
+  );
 
   if (!course) return <div>Loading course...</div>;
 

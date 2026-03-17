@@ -12,7 +12,8 @@ import ProblemDetail from './pages/student/ProblemDetail.jsx';
 import QuizPage from './pages/student/QuizPage.jsx';
 import Profile from './pages/student/Profile.jsx';
 import Settings from './pages/student/Settings.jsx';
-import { AuthProvider, useAuth } from './context/AuthContext.jsx';
+import { AuthProvider } from './context/AuthContext.jsx';
+import { useAuth } from './context/useAuth.js';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
