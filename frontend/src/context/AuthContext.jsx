@@ -1,25 +1,18 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-
-const AuthContext = createContext(null);
+import React, { useState } from 'react';
+import { AuthContext } from './authContextInstance.js';
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const storedToken = localStorage.getItem('skyblip_token');
+  const [token, setToken] = useState(() => localStorage.getItem('skyblip_token'));
+  const [user, setUser] = useState(() => {
     const storedUser = localStorage.getItem('skyblip_user');
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch {
-        setUser(null);
-      }
+    if (!storedUser) return null;
+    try {
+      return JSON.parse(storedUser);
+    } catch {
+      return null;
     }
-    setLoading(false);
-  }, []);
+  });
+  const loading = false;
 
   const login = async (email, password) => {
     // Local authentication - no backend call
@@ -90,13 +83,5 @@ export const AuthProvider = ({ children }) => {
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
-
-export const useAuth = () => {
-  const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
-  return ctx;
 };
 

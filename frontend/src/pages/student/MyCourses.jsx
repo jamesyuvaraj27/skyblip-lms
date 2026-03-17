@@ -1,14 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { useAuth } from '../../context/AuthContext.jsx';
+import React, { useMemo } from 'react';
+import { useAuth } from '../../context/useAuth.js';
 import { Link } from 'react-router-dom';
 
 const MyCourses = () => {
-  const { token } = useAuth();
-  const [items, setItems] = useState([]);
-
-  useEffect(() => {
-    // Mock course data - no backend call
-    const mockCourses = [
+  useAuth();
+  const items = useMemo(
+    () => [
       {
         id: 1,
         courseId: 1,
@@ -30,9 +27,9 @@ const MyCourses = () => {
         thumbnail: 'https://via.placeholder.com/300x150?text=React',
         progressPercent: 30
       }
-    ];
-    setItems(mockCourses);
-  }, [token]);
+    ],
+    []
+  );
 
   return (
     <div className="my-courses-page">

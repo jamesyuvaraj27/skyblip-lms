@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext.jsx';
+import { useAuth } from '../../context/useAuth.js';
 
 const StudentLayout = () => {
   const { user, logout } = useAuth();

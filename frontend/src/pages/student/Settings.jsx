@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext.jsx';
 
 const Settings = () => {
   const [currentPassword, setCurrentPassword] = useState('');

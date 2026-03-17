@@ -1,14 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext.jsx';
+import { useAuth } from '../../context/useAuth.js';
 
 const ProblemList = () => {
-  const { token } = useAuth();
-  const [problems, setProblems] = useState([]);
-
-  useEffect(() => {
-    // Mock problem data - no backend call
-    const mockProblems = [
+  useAuth();
+  const problems = useMemo(
+    () => [
       { id: 1, title: 'Two Sum', category: 'Arrays', difficulty: 'Easy' },
       { id: 2, title: 'Reverse String', category: 'Strings', difficulty: 'Easy' },
       { id: 3, title: 'Merge Intervals', category: 'Arrays', difficulty: 'Medium' },
@@ -16,9 +13,9 @@ const ProblemList = () => {
       { id: 5, title: 'Climb Stairs', category: 'DP', difficulty: 'Easy' },
       { id: 6, title: 'Coin Change', category: 'DP', difficulty: 'Medium' },
       { id: 7, title: 'Word Break', category: 'DP', difficulty: 'Hard' }
-    ];
-    setProblems(mockProblems);
-  }, [token]);
+    ],
+    []
+  );
 
   return (
     <div className="problems-page">

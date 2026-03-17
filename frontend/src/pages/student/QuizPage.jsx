@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext.jsx';
+import { useAuth } from '../../context/useAuth.js';
 
 // Mock quizzes data
 const mockQuizzesData = {
@@ -47,17 +47,10 @@ const mockQuizzesData = {
 
 const QuizPage = () => {
   const { quizId } = useParams();
-  const { token } = useAuth();
-  const [quiz, setQuiz] = useState(null);
-  const [answers, setAnswers] = useState([]);
+  useAuth();
+  const quiz = useMemo(() => mockQuizzesData[quizId] || mockQuizzesData[1], [quizId]);
+  const [answers, setAnswers] = useState(() => new Array(quiz.questions.length).fill(null));
   const [result, setResult] = useState(null);
-
-  useEffect(() => {
-    // Mock fetch - no backend call
-    const mockQuiz = mockQuizzesData[quizId] || mockQuizzesData[1];
-    setQuiz(mockQuiz);
-    setAnswers(new Array(mockQuiz.questions.length).fill(null));
-  }, [quizId, token]);
 
   const submitQuiz = async () => {
     // Mock submission - no backend call

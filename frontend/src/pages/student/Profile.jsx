@@ -1,21 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { useAuth } from '../../context/AuthContext.jsx';
+import React, { useState } from 'react';
+import { useAuth } from '../../context/useAuth.js';
 
 const Profile = () => {
   const { user } = useAuth();
-  const [profile, setProfile] = useState(user);
-  const [bio, setBio] = useState(user?.bio || '');
-  const [name, setName] = useState(user?.name || '');
+  const [profile, setProfile] = useState(() => user);
+  const [bio, setBio] = useState(() => user?.bio || '');
+  const [name, setName] = useState(() => user?.name || '');
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    // Use local user state - no backend call
-    if (user) {
-      setProfile(user);
-      setName(user.name);
-      setBio(user.bio || '');
-    }
-  }, [user]);
 
   const saveProfile = async () => {
     setSaving(true);
