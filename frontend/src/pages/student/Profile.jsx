@@ -1,66 +1,77 @@
 import React, { useMemo, useState } from 'react';
 import { useAuth } from '../../context/useAuth.js';
+import { studentAchievements, studentCourses, studentSnapshot } from './studentData.js';
+import './Profile.css';
 
 const Profile = () => {
-  const { user } = useAuth();
-  const [profile, setProfile] = useState(() => user);
-  const [bio, setBio] = useState(() => user?.bio || '');
-  const [name, setName] = useState(() => user?.name || '');
+  const { user, updateProfile } = useAuth();
+  const [name, setName] = useState(() => user?.name || 'Student');
+  const [headline, setHeadline] = useState(() => user?.headline || 'Aspiring software engineer');
+  const [bio, setBio] = useState(() => user?.bio || 'Focused on DSA, React, and interview readiness.');
   const [goal, setGoal] = useState(() => user?.goal || 'job');
   const [studyTime, setStudyTime] = useState(() => user?.studyTime || 'evening');
   const [notifications, setNotifications] = useState(() => user?.notifications ?? true);
   const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
 
   const stats = useMemo(
     () => ({
-      courses: 3,
-      practiceSolved: 12,
-      quizzesTaken: 2,
-      streakDays: 5
+      courses: studentSnapshot.activeCourses,
+      practiceSolved: studentSnapshot.solvedProblems,
+      quizzesTaken: studentSnapshot.quizzesCompleted,
+      streakDays: studentSnapshot.streakDays
     }),
     []
   );
 
-  const achievements = useMemo(
+  const skillMatrix = useMemo(
     () => [
-      { title: 'First Course Started', body: 'You enrolled and completed your first lesson.', tone: 'info' },
-      { title: 'Streak Builder', body: 'Maintained a 5-day learning streak.', tone: 'warning' },
-      { title: 'Problem Solver', body: 'Solved 10+ practice problems.', tone: 'success' }
+      { name: 'JavaScript', score: 78 },
+      { name: 'Data Structures', score: 74 },
+      { name: 'Problem Solving', score: 72 },
+      { name: 'Frontend System Design', score: 65 }
     ],
     []
   );
 
   const saveProfile = async () => {
     setSaving(true);
+    setMessage('');
+
     try {
-      // Local save - no backend call
-      const updatedProfile = { ...profile, name, bio, goal, studyTime, notifications };
-      setProfile(updatedProfile);
-      // Update localStorage
-      localStorage.setItem('skyblip_user', JSON.stringify(updatedProfile));
+      updateProfile({
+        name,
+        headline,
+        bio,
+        goal,
+        studyTime,
+        notifications
+      });
+      setMessage('Profile updated successfully.');
     } finally {
       setSaving(false);
     }
   };
 
-  if (!profile) return <div>Loading profile...</div>;
+  if (!user) return <div>Loading profile...</div>;
 
   return (
     <div className="profile-page">
       <header className="mycourses-hero">
         <div>
-          <p className="dashboard-hero__eyebrow">Profile</p>
-          <h2 className="mycourses-hero__title">Your learner profile</h2>
+          <p className="dashboard-hero__eyebrow">Learner identity</p>
+          <h2 className="mycourses-hero__title">Student Profile</h2>
           <p className="muted mycourses-hero__subtitle">
-            Your identity across courses, practice, quizzes, and leaderboards — designed like a real
-            LMS profile page.
+            Manage your public learner profile, skill summary, and growth targets used across courses,
+            practice, and quizzes.
           </p>
         </div>
+
         <div className="mycourses-hero__right">
           <div className="dashboard-pills">
             <span className="pill pill--filter">Public snapshot</span>
-            <span className="pill pill--filter">Preferences</span>
-            <span className="pill pill--filter">Achievements</span>
+            <span className="pill pill--filter">Skill matrix</span>
+            <span className="pill pill--filter">Achievement timeline</span>
           </div>
         </div>
       </header>
@@ -88,44 +99,55 @@ const Profile = () => {
             <span className="dashboard-chip dashboard-chip--warning" aria-hidden="true" />
           </div>
           <p className="metric">{stats.streakDays} days</p>
-          <p className="muted">Keep it alive daily</p>
+          <p className="muted">Consistency score rising</p>
         </div>
       </section>
 
       <div className="profile-layout">
-        <div className="card profile-card">
-          <h3>Account details</h3>
-          <p className="muted">Update your name, bio, and learning preferences.</p>
+        <section className="card profile-card">
+          <h3>Account and Goals</h3>
+          <p className="muted">These details appear in classroom spaces and certificates.</p>
+
           <label>
-            Name
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} />
+            Full name
+            <input type="text" value={name} onChange={(event) => setName(event.target.value)} />
+          </label>
+
+          <label>
+            Headline
+            <input
+              type="text"
+              value={headline}
+              onChange={(event) => setHeadline(event.target.value)}
+              placeholder="Example: React + DSA learner"
+            />
           </label>
 
           <label>
             Bio
             <textarea
               value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              placeholder="Eg. MERN learner focusing on DSA and system design."
+              onChange={(event) => setBio(event.target.value)}
+              placeholder="Share your focus areas and goals."
             />
           </label>
 
           <div className="profile-preferences">
             <label>
               Learning goal
-              <select className="mycourses-select" value={goal} onChange={(e) => setGoal(e.target.value)}>
-                <option value="job">Job prep</option>
-                <option value="college">College</option>
+              <select className="mycourses-select" value={goal} onChange={(event) => setGoal(event.target.value)}>
+                <option value="job">Job preparation</option>
+                <option value="college">College semester support</option>
                 <option value="skill">Skill upgrade</option>
               </select>
             </label>
 
             <label>
-              Preferred study time
+              Preferred study window
               <select
                 className="mycourses-select"
                 value={studyTime}
-                onChange={(e) => setStudyTime(e.target.value)}
+                onChange={(event) => setStudyTime(event.target.value)}
               >
                 <option value="morning">Morning</option>
                 <option value="evening">Evening</option>
@@ -137,52 +159,88 @@ const Profile = () => {
               <input
                 type="checkbox"
                 checked={notifications}
-                onChange={(e) => setNotifications(e.target.checked)}
+                onChange={(event) => setNotifications(event.target.checked)}
               />
-              Smart reminders
+              Smart reminders enabled
             </label>
           </div>
 
-          <button className="btn btn--primary btn--small" onClick={saveProfile} disabled={saving}>
-            {saving ? 'Saving...' : 'Save changes'}
-          </button>
-        </div>
+          <div className="profile-card__actions">
+            <button className="btn btn--primary btn--small" onClick={saveProfile} disabled={saving}>
+              {saving ? 'Saving...' : 'Save profile'}
+            </button>
+            {message && <span className="pill pill--success">{message}</span>}
+          </div>
+        </section>
 
         <div className="profile-right">
-          <div className="card profile-summary">
+          <section className="card profile-summary">
             <h3>Public snapshot</h3>
-            <p className="muted">
-              This is how you appear on leaderboards, course discussions, and certificates.
-            </p>
-            <div className="profile-avatar">{profile.name?.charAt(0) || 'S'}</div>
-            <p className="profile-name">{profile.name}</p>
-            <p className="profile-email">{profile.email}</p>
-            <p className="muted">{profile.bio || 'No bio added yet.'}</p>
-            <div className="course-card__meta-row" style={{ justifyContent: 'center' }}>
-              <span className="pill pill--filter">{goal === 'job' ? 'Job prep' : goal}</span>
-              <span className="pill pill--filter">{studyTime}</span>
+            <p className="muted">Visible to mentors, peers, and leaderboard widgets.</p>
+
+            <div className="profile-avatar">{name?.charAt(0)?.toUpperCase() || 'S'}</div>
+            <p className="profile-name">{name}</p>
+            <p className="profile-email">{user.email}</p>
+            <p className="muted">{headline}</p>
+            <p className="muted">{bio}</p>
+
+            <div className="course-card__meta-row profile-summary__tags">
+              <span className="pill pill--filter">Goal: {goal}</span>
+              <span className="pill pill--filter">Study: {studyTime}</span>
               <span className={`pill ${notifications ? 'pill--success' : 'pill--filter'}`}>
                 {notifications ? 'Reminders on' : 'Reminders off'}
               </span>
             </div>
-          </div>
+          </section>
 
-          <div className="card dashboard-panel">
+          <section className="card dashboard-panel">
             <div className="dashboard-panel__header">
               <div>
-                <h3>Achievements</h3>
-                <p className="muted">Motivation + credibility in a real LMS.</p>
+                <h3>Skill matrix</h3>
+                <p className="muted">Current confidence scores from your activity.</p>
               </div>
             </div>
-            <div className="dashboard-announcements">
-              {achievements.map((a) => (
-                <div key={a.title} className={`dashboard-note dashboard-note--${a.tone}`}>
-                  <p className="dashboard-note__title">{a.title}</p>
-                  <p className="muted">{a.body}</p>
+
+            <div className="profile-skill-grid">
+              {skillMatrix.map((skill) => (
+                <div key={skill.name} className="profile-skill-row">
+                  <div className="profile-skill-row__meta">
+                    <span>{skill.name}</span>
+                    <span className="muted">{skill.score}%</span>
+                  </div>
+                  <div className="course-progress__bar" aria-label={`${skill.name} score`}>
+                    <div className="course-progress__fill" style={{ width: `${skill.score}%` }} />
+                  </div>
                 </div>
               ))}
             </div>
-          </div>
+          </section>
+
+          <section className="card dashboard-panel">
+            <div className="dashboard-panel__header">
+              <div>
+                <h3>Achievement timeline</h3>
+                <p className="muted">Milestones collected from courses and practice.</p>
+              </div>
+            </div>
+
+            <div className="dashboard-announcements">
+              {studentAchievements.map((achievement) => (
+                <div key={achievement.id} className={`dashboard-note dashboard-note--${achievement.tone}`}>
+                  <p className="dashboard-note__title">{achievement.title}</p>
+                  <p className="muted">{achievement.body}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="profile-course-strip">
+              {studentCourses.map((course) => (
+                <span key={course.id} className="pill pill--filter">
+                  {course.shortTitle}
+                </span>
+              ))}
+            </div>
+          </section>
         </div>
       </div>
     </div>
@@ -190,4 +248,3 @@ const Profile = () => {
 };
 
 export default Profile;
-

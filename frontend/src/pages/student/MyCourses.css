@@ -1,0 +1,154 @@
+.my-courses-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.mycourses-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.mycourses-cardlist {
+  display: grid;
+  gap: 1rem;
+}
+
+.dashboard-cards .metric {
+  font-size: 1.6rem;
+  margin-top: 0.5rem;
+}
+
+.course-card--wide {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+}
+
+.course-card__title {
+  font-size: 1.05rem;
+  font-weight: 650;
+  margin-bottom: 0.25rem;
+}
+
+.course-progress {
+  margin-top: 0.6rem;
+}
+
+.course-progress__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+  font-size: 0.88rem;
+}
+
+.course-progress__bar {
+  margin-top: 0.45rem;
+  height: 10px;
+  border-radius: 999px;
+  background-color: var(--surface-soft);
+  overflow: hidden;
+  border: 1px solid var(--border-soft);
+}
+
+.course-progress__fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent-gradient);
+}
+
+.course-card__side {
+  display: grid;
+  gap: 0.6rem;
+  justify-items: end;
+  min-width: 220px;
+}
+
+.course-card__side .btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.course-card__actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.course-card__next {
+  margin-top: 0.6rem;
+}
+
+.course-thumb--gradient {
+  border-radius: 0.8rem;
+  margin-bottom: 0.55rem;
+  border: 1px solid var(--border-soft);
+  background:
+    radial-gradient(circle at top right, var(--accent-soft), transparent 60%),
+    var(--surface-soft);
+}
+
+.course-thumb__inner {
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.course-thumb__inner h4 {
+  font-size: 1rem;
+}
+
+.course-empty {
+  text-align: left;
+}
+
+.mycourses-side {
+  display: grid;
+  gap: 1rem;
+}
+
+.mycourses-certs {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.mycourses-cert-card {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.7rem;
+  border-radius: 0.9rem;
+  border: 1px solid var(--border-soft);
+  background-color: var(--surface-soft);
+}
+
+.mycourses-cert-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+@media (max-width: 1100px) {
+  .mycourses-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .course-card--wide {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .course-card__side {
+    min-width: auto;
+    justify-items: start;
+  }
+
+  .course-card__actions {
+    flex-wrap: wrap;
+  }
+}

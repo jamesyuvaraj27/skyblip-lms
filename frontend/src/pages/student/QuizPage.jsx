@@ -1,93 +1,69 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useAuth } from '../../context/useAuth.js';
+import { getQuizById } from './studentData.js';
+import './QuizPage.css';
 
-// Mock quizzes data
-const mockQuizzesData = {
-  1: {
-    id: 1,
-    title: 'Arrays Basics Quiz',
-    durationMinutes: 15,
-    questions: [
-      {
-        id: 1,
-        question: 'What is the time complexity of accessing an element by index in an array?',
-        options: ['O(n)', 'O(1)', 'O(log n)', 'O(n²)']
-      },
-      {
-        id: 2,
-        question: 'Which method adds an element to the end of an array?',
-        options: ['push()', 'pop()', 'shift()', 'unshift()']
-      },
-      {
-        id: 3,
-        question: 'What is the index of the first element in an array?',
-        options: ['1', '0', '-1', 'undefined']
-      }
-    ]
-  },
-  2: {
-    id: 2,
-    title: 'Strings Advanced Quiz',
-    durationMinutes: 20,
-    questions: [
-      {
-        id: 4,
-        question: 'Are strings in JavaScript mutable?',
-        options: ['Yes', 'No', 'Sometimes', 'It depends']
-      },
-      {
-        id: 5,
-        question: 'How do you find the length of a string?',
-        options: ['str.size', 'str.length', 'len(str)', 'str.count']
-      }
-    ]
-  }
+const formatTimer = (totalSeconds) => {
+  const minutes = Math.floor(totalSeconds / 60)
+    .toString()
+    .padStart(2, '0');
+  const seconds = Math.max(totalSeconds % 60, 0)
+    .toString()
+    .padStart(2, '0');
+  return `${minutes}:${seconds}`;
 };
 
 const QuizPage = () => {
   const { quizId } = useParams();
-  const { user } = useAuth();
-  const quiz = useMemo(() => mockQuizzesData[quizId] || mockQuizzesData[1], [quizId]);
+  const quiz = useMemo(() => getQuizById(quizId) ?? getQuizById('q1'), [quizId]);
 
-  return <QuizInner key={quizId} quiz={quiz} userName={user?.name} />;
-};
-
-const QuizInner = ({ quiz, userName }) => {
   const [answers, setAnswers] = useState(() => new Array(quiz.questions.length).fill(null));
-  const [result, setResult] = useState(null);
-  const [startedAt] = useState(() => Date.now());
   const [reviewMode, setReviewMode] = useState(false);
+  const [result, setResult] = useState(null);
+  const [secondsLeft, setSecondsLeft] = useState(() => quiz.durationMinutes * 60);
+  const [startedAt] = useState(() => Date.now());
 
-  const submitQuiz = async () => {
-    // Mock submission - no backend call
-    const scoreCount = answers.filter((ans) => ans !== null).length;
-    const totalQuestions = quiz.questions.length;
-    const mockResult = {
-      score: scoreCount,
-      total: totalQuestions,
-      percentage: Math.round((scoreCount / totalQuestions) * 100)
-    };
-    setResult(mockResult);
+  useEffect(() => {
+    if (reviewMode) return undefined;
+
+    const timer = setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [reviewMode]);
+
+  const answeredCount = useMemo(() => answers.filter((answer) => answer !== null).length, [answers]);
+  const remainingCount = quiz.questions.length - answeredCount;
+  const startedLabel = useMemo(() => new Date(startedAt).toLocaleString(), [startedAt]);
+
+  const submitQuiz = () => {
+    const evaluated = evaluateResult(quiz, answers);
+    setResult(evaluated);
     setReviewMode(true);
   };
 
-  const answeredCount = useMemo(() => answers.filter((a) => a !== null).length, [answers]);
-  const remainingCount = quiz.questions.length - answeredCount;
-  const startedLabel = useMemo(() => new Date(startedAt).toLocaleString(), [startedAt]);
+  const resetAttempt = () => {
+    setAnswers(new Array(quiz.questions.length).fill(null));
+    setResult(null);
+    setReviewMode(false);
+    setSecondsLeft(quiz.durationMinutes * 60);
+  };
 
   return (
     <div className="quiz-page">
       <header className="mycourses-hero">
         <div>
-          <p className="dashboard-hero__eyebrow">Quiz</p>
-          <h2 className="mycourses-hero__title">
-            {quiz.title}
-            {userName ? ` · ${userName}` : ''}
-          </h2>
+          <p className="dashboard-hero__eyebrow">Assessment center</p>
+          <h2 className="mycourses-hero__title">{quiz.title}</h2>
           <p className="muted mycourses-hero__subtitle">
-            Timed MCQ assessment — answers save into results, analytics, and mastery tracking in a
-            real LMS.
+            Timed checkpoint with question-by-question review, explanations, and pass/fail analytics.
           </p>
         </div>
 
@@ -110,60 +86,118 @@ const QuizInner = ({ quiz, userName }) => {
               <span className="pill pill--filter">{remainingCount}</span>
             </div>
             <div className="quiz-summary__row">
-              <span className="muted">Elapsed</span>
-              <span className="pill pill--filter">Started: {startedLabel}</span>
+              <span className="muted">Timer</span>
+              <span className={`pill ${secondsLeft < 120 && !reviewMode ? 'pill--warning' : 'pill--filter'}`}>
+                {formatTimer(secondsLeft)}
+              </span>
+            </div>
+            <div className="quiz-summary__row">
+              <span className="muted">Started</span>
+              <span className="pill pill--filter">{startedLabel}</span>
             </div>
           </div>
 
           <div className="dashboard-pills">
             <span className="pill pill--filter">Auto-save answers</span>
-            <span className="pill pill--filter">Review mode</span>
-            <span className="pill pill--filter">Certificate ready</span>
+            <span className="pill pill--filter">Review with explanations</span>
+            <span className="pill pill--filter">Pass mark {quiz.passPercent}%</span>
           </div>
         </div>
       </header>
 
       <section className="quiz-layout">
         <div className="quiz-questions">
-          {quiz.questions.map((q, index) => (
-            <div key={q.id} className={`card quiz-question ${reviewMode ? 'quiz-question--review' : ''}`}>
-              <div className="quiz-question__top">
-                <p className="quiz-question__number muted">Question {index + 1}</p>
-                <span className={`pill ${answers[index] !== null ? 'pill--success' : 'pill--filter'}`}>
-                  {answers[index] !== null ? 'Answered' : 'Not answered'}
-                </span>
-              </div>
-              <p className="quiz-question__text">{q.question}</p>
-              <div className="quiz-options">
-                {q.options.map((opt, optIndex) => (
-                  <label key={optIndex} className="quiz-option">
-                    <input
-                      type="radio"
-                      name={`q${index}`}
-                      checked={answers[index] === optIndex}
-                      disabled={reviewMode}
-                      onChange={() =>
-                        setAnswers((prev) => {
-                          const next = [...prev];
-                          next[index] = optIndex;
-                          return next;
-                        })
-                      }
-                    />
-                    <span>{opt}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          ))}
+          {quiz.questions.map((question, index) => {
+            const selected = answers[index];
+            const isCorrect = selected === question.correctIndex;
+
+            return (
+              <article
+                key={question.id}
+                className={`card quiz-question ${reviewMode ? 'quiz-question--review' : ''}`}
+              >
+                <div className="quiz-question__top">
+                  <p className="quiz-question__number muted">Question {index + 1}</p>
+                  <span
+                    className={`pill ${
+                      selected === null
+                        ? 'pill--filter'
+                        : reviewMode
+                          ? isCorrect
+                            ? 'pill--success'
+                            : 'pill--hard'
+                          : 'pill--success'
+                    }`}
+                  >
+                    {selected === null ? 'Not answered' : reviewMode ? (isCorrect ? 'Correct' : 'Incorrect') : 'Answered'}
+                  </span>
+                </div>
+
+                <p className="quiz-question__text">{question.question}</p>
+
+                <div className="quiz-options">
+                  {question.options.map((option, optionIndex) => {
+                    const isSelected = answers[index] === optionIndex;
+                    const isAnswer = optionIndex === question.correctIndex;
+
+                    const optionClass = reviewMode
+                      ? isAnswer
+                        ? 'quiz-option quiz-option--correct'
+                        : isSelected
+                          ? 'quiz-option quiz-option--wrong'
+                          : 'quiz-option'
+                      : 'quiz-option';
+
+                    return (
+                      <label key={`${question.id}-${option}`} className={optionClass}>
+                        <input
+                          type="radio"
+                          name={`question-${index}`}
+                          checked={isSelected}
+                          disabled={reviewMode || secondsLeft === 0}
+                          onChange={() =>
+                            setAnswers((prev) => {
+                              const next = [...prev];
+                              next[index] = optionIndex;
+                              return next;
+                            })
+                          }
+                        />
+                        <span>{option}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+
+                {reviewMode && (
+                  <div className="quiz-explanation">
+                    <p className="stat-label">Explanation</p>
+                    <p className="muted">{question.explanation}</p>
+                  </div>
+                )}
+              </article>
+            );
+          })}
         </div>
 
         <aside className="card dashboard-panel quiz-side">
           <div className="dashboard-panel__header">
             <div>
               <h3>Submission</h3>
-              <p className="muted">Before submitting, ensure all questions are answered.</p>
+              <p className="muted">Validate all answers before final submit.</p>
             </div>
+          </div>
+
+          <div className="quiz-nav-grid" aria-label="Question navigator">
+            {quiz.questions.map((question, index) => {
+              const selected = answers[index];
+              const navClass = selected === null ? 'pill pill--filter' : 'pill pill--success';
+              return (
+                <button key={question.id} type="button" className={navClass}>
+                  Q{index + 1}
+                </button>
+              );
+            })}
           </div>
 
           <ul className="mycourses-checklist" aria-label="Quiz checklist">
@@ -171,66 +205,97 @@ const QuizInner = ({ quiz, userName }) => {
               <span className="dot dot--info" aria-hidden="true" />
               <div>
                 <strong>Answer all questions</strong>
-                <p className="muted">Unanswered questions reduce your score.</p>
+                <p className="muted">Unanswered questions reduce final percentage.</p>
               </div>
             </li>
             <li className="mycourses-check">
               <span className="dot dot--warning" aria-hidden="true" />
               <div>
-                <strong>Time awareness</strong>
-                <p className="muted">Aim to finish within {quiz.durationMinutes} minutes.</p>
+                <strong>Watch the timer</strong>
+                <p className="muted">Auto-submit triggers when timer reaches zero.</p>
               </div>
             </li>
             <li className="mycourses-check">
               <span className="dot dot--primary" aria-hidden="true" />
               <div>
-                <strong>Review mode</strong>
-                <p className="muted">After submit, answers lock for review.</p>
+                <strong>Review explanations</strong>
+                <p className="muted">Use feedback to improve future attempts.</p>
               </div>
             </li>
           </ul>
 
           <div className="dashboard-panel__footer">
             <button className="btn btn--primary btn--small" type="button" onClick={submitQuiz} disabled={reviewMode}>
-              {reviewMode ? 'Submitted' : 'Submit quiz'}
+              {reviewMode ? 'Submitted' : secondsLeft === 0 ? 'Submit (time up)' : 'Submit quiz'}
             </button>
-            <button
-              className="btn btn--ghost btn--small"
-              type="button"
-              onClick={() => {
-                setAnswers(new Array(quiz.questions.length).fill(null));
-                setResult(null);
-                setReviewMode(false);
-              }}
-            >
+            <button className="btn btn--ghost btn--small" type="button" onClick={resetAttempt}>
               Reset attempt
             </button>
           </div>
 
+          {secondsLeft === 0 && !reviewMode && (
+            <p className="muted">Time is up. Submit now to lock and evaluate your answers.</p>
+          )}
+
           {result && (
             <div className="quiz-result card">
-              <h3>Result</h3>
+              <h3>Result Summary</h3>
               <p className="quiz-result__score">
-                Score: <strong>{result.score}</strong> / {result.total} ({result.percentage}%)
+                Score: <strong>{result.correct}</strong> / {result.total} ({result.percentage}%)
               </p>
               <p className="muted">
-                In a full LMS, this would unlock certificates, update mastery, and notify instructors.
+                Correct: {result.correct} | Incorrect: {result.incorrect} | Unanswered: {result.unanswered}
+              </p>
+              <p className="muted">
+                Status:{' '}
+                <span className={`pill ${result.passed ? 'pill--success' : 'pill--hard'}`}>
+                  {result.passed ? 'Passed' : 'Needs improvement'}
+                </span>
               </p>
             </div>
           )}
         </aside>
       </section>
+
       {result && (
-        <div className="card quiz-review-note">
-          <h3>Review mode enabled</h3>
+        <section className="card quiz-review-note">
+          <h3>Review Mode Enabled</h3>
           <p className="muted">
-            Your selections are locked. In a real system, you would see correct answers + explanations here.
+            Correct answers and explanations are visible now. Reset attempt to retake this quiz.
           </p>
-        </div>
+        </section>
       )}
     </div>
   );
 };
 
-export default QuizPage;
+const evaluateResult = (quiz, answers) => {
+  const total = quiz.questions.length;
+  let correct = 0;
+  let unanswered = 0;
 
+  quiz.questions.forEach((question, index) => {
+    const selected = answers[index];
+    if (selected === null) {
+      unanswered += 1;
+      return;
+    }
+    if (selected === question.correctIndex) {
+      correct += 1;
+    }
+  });
+
+  const incorrect = total - correct - unanswered;
+  const percentage = Math.round((correct / Math.max(total, 1)) * 100);
+
+  return {
+    total,
+    correct,
+    incorrect,
+    unanswered,
+    percentage,
+    passed: percentage >= quiz.passPercent
+  };
+};
+
+export default QuizPage;

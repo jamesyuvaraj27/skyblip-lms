@@ -1,62 +1,68 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../../context/useAuth.js';
+import { studentProblems, studentSnapshot } from './studentData.js';
+import './ProblemList.css';
 
 const ProblemList = () => {
-  const { user } = useAuth();
   const [query, setQuery] = useState('');
   const [topic, setTopic] = useState('all');
   const [difficulty, setDifficulty] = useState('all');
-  const problems = useMemo(
-    () => [
-      { id: 1, title: 'Two Sum', category: 'Arrays', difficulty: 'Easy', acceptance: 71, points: 50 },
-      { id: 2, title: 'Reverse String', category: 'Strings', difficulty: 'Easy', acceptance: 83, points: 30 },
-      { id: 3, title: 'Merge Intervals', category: 'Arrays', difficulty: 'Medium', acceptance: 58, points: 120 },
-      { id: 4, title: 'Longest Palindrome', category: 'Strings', difficulty: 'Medium', acceptance: 49, points: 140 },
-      { id: 5, title: 'Climb Stairs', category: 'DP', difficulty: 'Easy', acceptance: 79, points: 60 },
-      { id: 6, title: 'Coin Change', category: 'DP', difficulty: 'Medium', acceptance: 44, points: 160 },
-      { id: 7, title: 'Word Break', category: 'DP', difficulty: 'Hard', acceptance: 31, points: 220 }
-    ],
-    []
-  );
+  const [status, setStatus] = useState('all');
+  const [sortBy, setSortBy] = useState('points-desc');
 
-  const solvedSet = useMemo(() => new Set([1, 5, 2]), []);
+  const stats = useMemo(() => {
+    const total = studentProblems.length;
+    const solved = studentProblems.filter((problem) => problem.solved).length;
+    const attempted = studentProblems.filter((problem) => problem.attempted).length;
+    const mediumHard = studentProblems.filter(
+      (problem) => ['Medium', 'Hard'].includes(problem.difficulty)
+    ).length;
+
+    return { total, solved, attempted, mediumHard };
+  }, []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return problems.filter((p) => {
-      const matchesQuery = !q || p.title.toLowerCase().includes(q);
-      const matchesTopic = topic === 'all' || p.category.toLowerCase() === topic;
-      const matchesDiff = difficulty === 'all' || p.difficulty.toLowerCase() === difficulty;
-      return matchesQuery && matchesTopic && matchesDiff;
-    });
-  }, [problems, query, topic, difficulty]);
 
-  const stats = useMemo(() => {
-    const total = problems.length;
-    const solved = problems.filter((p) => solvedSet.has(p.id)).length;
-    const easy = problems.filter((p) => p.difficulty === 'Easy').length;
-    const medium = problems.filter((p) => p.difficulty === 'Medium').length;
-    const hard = problems.filter((p) => p.difficulty === 'Hard').length;
-    return { total, solved, easy, medium, hard };
-  }, [problems, solvedSet]);
+    const list = studentProblems.filter((problem) => {
+      const matchesQuery =
+        !q ||
+        problem.title.toLowerCase().includes(q) ||
+        problem.category.toLowerCase().includes(q) ||
+        (problem.tags ?? []).some((tag) => tag.toLowerCase().includes(q));
+
+      const matchesTopic = topic === 'all' || problem.category.toLowerCase() === topic;
+      const matchesDifficulty =
+        difficulty === 'all' || problem.difficulty.toLowerCase() === difficulty;
+
+      const problemStatus = problem.solved ? 'solved' : problem.attempted ? 'attempted' : 'new';
+      const matchesStatus = status === 'all' || problemStatus === status;
+
+      return matchesQuery && matchesTopic && matchesDifficulty && matchesStatus;
+    });
+
+    return [...list].sort((a, b) => {
+      if (sortBy === 'acceptance-desc') return b.acceptance - a.acceptance;
+      if (sortBy === 'acceptance-asc') return a.acceptance - b.acceptance;
+      if (sortBy === 'points-asc') return a.points - b.points;
+      return b.points - a.points;
+    });
+  }, [difficulty, query, sortBy, status, topic]);
 
   return (
     <div className="problems-page">
       <header className="mycourses-hero">
         <div>
-          <p className="dashboard-hero__eyebrow">Practice</p>
-          <h2 className="mycourses-hero__title">
-            Practice Problems{user?.name ? ` · ${user.name}` : ''}
-          </h2>
+          <p className="dashboard-hero__eyebrow">Coding practice</p>
+          <h2 className="mycourses-hero__title">Problem Bank and Compiler</h2>
           <p className="muted mycourses-hero__subtitle">
-            Topic-wise problem bank with difficulty filters, acceptance rates, and a coding editor —
-            exactly how real LMS + interview platforms feel.
+            Built with interview-platform patterns: difficulty tags, accuracy, submissions, points,
+            and one-click coding workspace.
           </p>
         </div>
 
         <div className="mycourses-hero__right">
-          <div className="mycourses-toolbar">
+          <div className="mycourses-toolbar problems-toolbar">
             <div className="dashboard-hero__search">
               <label className="dashboard-hero__search-label" htmlFor="problemSearch">
                 Search
@@ -65,21 +71,22 @@ const ProblemList = () => {
                 id="problemSearch"
                 type="search"
                 className="dashboard-input"
-                placeholder="Search problems…"
+                placeholder="Search by title, tag, or topic"
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(event) => setQuery(event.target.value)}
                 autoComplete="off"
               />
             </div>
+
             <div className="dashboard-hero__search">
-              <label className="dashboard-hero__search-label" htmlFor="diffFilter">
+              <label className="dashboard-hero__search-label" htmlFor="difficultyFilter">
                 Difficulty
               </label>
               <select
-                id="diffFilter"
+                id="difficultyFilter"
                 className="mycourses-select"
                 value={difficulty}
-                onChange={(e) => setDifficulty(e.target.value)}
+                onChange={(event) => setDifficulty(event.target.value)}
               >
                 <option value="all">All</option>
                 <option value="easy">Easy</option>
@@ -87,40 +94,54 @@ const ProblemList = () => {
                 <option value="hard">Hard</option>
               </select>
             </div>
+
+            <div className="dashboard-hero__search">
+              <label className="dashboard-hero__search-label" htmlFor="statusFilter">
+                Status
+              </label>
+              <select
+                id="statusFilter"
+                className="mycourses-select"
+                value={status}
+                onChange={(event) => setStatus(event.target.value)}
+              >
+                <option value="all">All</option>
+                <option value="new">New</option>
+                <option value="attempted">Attempted</option>
+                <option value="solved">Solved</option>
+              </select>
+            </div>
+
+            <div className="dashboard-hero__search">
+              <label className="dashboard-hero__search-label" htmlFor="sortBy">
+                Sort by
+              </label>
+              <select
+                id="sortBy"
+                className="mycourses-select"
+                value={sortBy}
+                onChange={(event) => setSortBy(event.target.value)}
+              >
+                <option value="points-desc">Points high to low</option>
+                <option value="points-asc">Points low to high</option>
+                <option value="acceptance-desc">Accuracy high to low</option>
+                <option value="acceptance-asc">Accuracy low to high</option>
+              </select>
+            </div>
           </div>
 
           <div className="dashboard-pills" role="group" aria-label="Topic filters">
-            <button
-              type="button"
-              className="pill pill--filter"
-              onClick={() => setTopic('all')}
-              aria-pressed={topic === 'all'}
-            >
-              All
+            <button type="button" className="pill pill--filter" onClick={() => setTopic('all')}>
+              All topics
             </button>
-            <button
-              type="button"
-              className="pill pill--filter"
-              onClick={() => setTopic('arrays')}
-              aria-pressed={topic === 'arrays'}
-            >
+            <button type="button" className="pill pill--filter" onClick={() => setTopic('arrays')}>
               Arrays
             </button>
-            <button
-              type="button"
-              className="pill pill--filter"
-              onClick={() => setTopic('strings')}
-              aria-pressed={topic === 'strings'}
-            >
+            <button type="button" className="pill pill--filter" onClick={() => setTopic('strings')}>
               Strings
             </button>
-            <button
-              type="button"
-              className="pill pill--filter"
-              onClick={() => setTopic('dp')}
-              aria-pressed={topic === 'dp'}
-            >
-              DP
+            <button type="button" className="pill pill--filter" onClick={() => setTopic('dp')}>
+              Dynamic Programming
             </button>
           </div>
         </div>
@@ -135,65 +156,117 @@ const ProblemList = () => {
           <p className="metric">
             {stats.solved} / {stats.total}
           </p>
-          <p className="muted">Keep a daily streak with one solve.</p>
+          <p className="muted">Keep daily consistency to retain streak.</p>
         </div>
+
         <div className="card dashboard-kpi dashboard-kpi--info">
           <div className="dashboard-kpi__top">
-            <p className="stat-label">Difficulty mix</p>
+            <p className="stat-label">Attempted</p>
             <span className="dashboard-chip dashboard-chip--info" aria-hidden="true" />
           </div>
-          <p className="metric">
-            {stats.easy}-{stats.medium}-{stats.hard}
-          </p>
-          <p className="muted">Easy / Medium / Hard in your pool.</p>
+          <p className="metric">{stats.attempted}</p>
+          <p className="muted">Problems where you have at least one run.</p>
         </div>
-        <div className="card dashboard-kpi dashboard-kpi--primary">
+
+        <div className="card dashboard-kpi dashboard-kpi--warning">
           <div className="dashboard-kpi__top">
-            <p className="stat-label">Shown</p>
-            <span className="dashboard-chip dashboard-chip--primary" aria-hidden="true" />
+            <p className="stat-label">Medium + Hard pool</p>
+            <span className="dashboard-chip dashboard-chip--warning" aria-hidden="true" />
           </div>
-          <p className="metric">{filtered.length}</p>
-          <p className="muted">Filtered by search & tags.</p>
+          <p className="metric">{stats.mediumHard}</p>
+          <p className="muted">Prioritize these for interview readiness.</p>
         </div>
       </section>
 
-      <div className="problem-table problem-table--rich">
-        <div className="problem-table__head">
-          <span>Title</span>
-          <span>Category</span>
-          <span>Difficulty</span>
-          <span>Acceptance</span>
-          <span>Status</span>
-        </div>
-        {filtered.map((p) => (
-          <Link
-            to={`/student/problems/${p.id}`}
-            key={p.id}
-            className="problem-table__row problem-link"
-          >
-            <span>{p.title}</span>
-            <span>{p.category}</span>
-            <span className={`pill pill--${p.difficulty?.toLowerCase()}`}>{p.difficulty}</span>
-            <span className="muted">{p.acceptance}%</span>
-            <span className={`pill ${solvedSet.has(p.id) ? 'pill--success' : 'pill--filter'}`}>
-              {solvedSet.has(p.id) ? 'Solved' : 'Not yet'}
-            </span>
-          </Link>
-        ))}
-        {filtered.length === 0 && (
-          <div className="problem-table__row">
-            <span>No matches found.</span>
-            <span />
-            <span />
-            <span />
-            <span />
-            <span />
+      <section className="problems-content-grid">
+        <div className="problem-table problem-table--rich">
+          <div className="problem-table__head">
+            <span>Problem</span>
+            <span>Difficulty</span>
+            <span>Accuracy</span>
+            <span>Submissions</span>
+            <span>Points</span>
+            <span>Status</span>
           </div>
-        )}
-      </div>
+
+          {filtered.map((problem) => {
+            const statusLabel = problem.solved ? 'Solved' : problem.attempted ? 'Attempted' : 'New';
+            const statusPill = problem.solved ? 'pill--success' : problem.attempted ? 'pill--warning' : 'pill--filter';
+
+            return (
+              <Link
+                to={`/student/problems/${problem.id}`}
+                key={problem.id}
+                className="problem-table__row problem-link"
+              >
+                <div className="problem-table__problem">
+                  <span className="problem-title">{problem.title}</span>
+                  <span className="muted">{problem.category}</span>
+                </div>
+                <span className={`pill pill--${problem.difficulty.toLowerCase()}`}>{problem.difficulty}</span>
+                <span className="muted">{problem.acceptance}%</span>
+                <span className="muted">{problem.submissions}</span>
+                <span className="pill pill--filter">{problem.points}</span>
+                <span className={`pill ${statusPill}`}>{statusLabel}</span>
+              </Link>
+            );
+          })}
+
+          {filtered.length === 0 && (
+            <div className="problem-table__row problem-table__row--empty">
+              <span>No matching problems found.</span>
+              <span />
+              <span />
+              <span />
+              <span />
+              <span />
+            </div>
+          )}
+        </div>
+
+        <aside className="card dashboard-panel problems-side">
+          <div className="dashboard-panel__header">
+            <div>
+              <h3>Weekly challenge</h3>
+              <p className="muted">Follow this sequence for balanced growth.</p>
+            </div>
+            <span className="pill pill--filter">Week 3</span>
+          </div>
+
+          <ul className="mycourses-checklist" aria-label="Challenge checklist">
+            <li className="mycourses-check">
+              <span className="dot dot--info" aria-hidden="true" />
+              <div>
+                <strong>2 Easy warmups</strong>
+                <p className="muted">Finish within 30 minutes total.</p>
+              </div>
+            </li>
+            <li className="mycourses-check">
+              <span className="dot dot--warning" aria-hidden="true" />
+              <div>
+                <strong>2 Medium drills</strong>
+                <p className="muted">Use the compiler diagnostics panel for quick fixes.</p>
+              </div>
+            </li>
+            <li className="mycourses-check">
+              <span className="dot dot--success" aria-hidden="true" />
+              <div>
+                <strong>1 Hard attempt</strong>
+                <p className="muted">Focus on approach and dry run before coding.</p>
+              </div>
+            </li>
+          </ul>
+
+          <div className="dashboard-note dashboard-note--info">
+            <p className="dashboard-note__title">Streak status</p>
+            <p className="muted">
+              {studentSnapshot.streakDays} day streak active. Solve one more problem today to preserve it.
+            </p>
+          </div>
+        </aside>
+      </section>
     </div>
   );
 };
 
 export default ProblemList;
-

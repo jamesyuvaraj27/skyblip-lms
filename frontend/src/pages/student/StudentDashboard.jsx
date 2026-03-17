@@ -1,176 +1,144 @@
 import React, { useMemo } from 'react';
-import { useAuth } from '../../context/useAuth.js';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/useAuth.js';
+import {
+  getContinueCourse,
+  recommendedTracks,
+  studentActivityFeed,
+  studentAnnouncements,
+  studentCourses,
+  studentDeadlines,
+  studentSnapshot,
+  weeklyLearningMinutes
+} from './studentData.js';
+import './StudentDashboard.css';
 
 const StudentDashboard = () => {
   const { user } = useAuth();
-  const stats = useMemo(() => {
-    const now = new Date();
-    const pad2 = (n) => String(n).padStart(2, '0');
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    return {
-      kpis: [
-        {
-          key: 'enrolled',
-          label: 'Active courses',
-          value: 3,
-          helper: 'Courses you’re currently learning',
-          tone: 'info'
-        },
-        {
-          key: 'progress',
-          label: 'Average progress',
-          value: 65,
-          suffix: '%',
-          helper: 'Across active enrollments',
-          tone: 'success'
-        },
-        {
-          key: 'practice',
-          label: 'Practice solved',
-          value: 12,
-          helper: 'Problems accepted this month',
-          tone: 'primary'
-        },
-        {
-          key: 'streak',
-          label: 'Learning streak',
-          value: 5,
-          suffix: ' days',
-          helper: 'Keep it alive with one activity',
-          tone: 'warning'
-        }
-      ],
-      continueLearning: {
-        courseId: 2,
-        title: 'Data Structures & Algorithms',
-        nextUp: 'Stacks · Balanced Parentheses',
-        progressPercent: 45,
-        minutesLeft: 18,
-        lastSeen: `${days[now.getDay()]} ${pad2(now.getHours())}:${pad2(now.getMinutes())}`
-      },
-      weekly: [
-        { day: 'Mon', minutes: 20 },
-        { day: 'Tue', minutes: 35 },
-        { day: 'Wed', minutes: 15 },
-        { day: 'Thu', minutes: 40 },
-        { day: 'Fri', minutes: 25 },
-        { day: 'Sat', minutes: 10 },
-        { day: 'Sun', minutes: 30 }
-      ],
-      upcoming: [
-        {
-          title: 'Quiz: Arrays Basics',
-          when: 'Today · 7:30 PM',
-          meta: '10 questions · 12 mins',
-          tone: 'warning'
-        },
-        {
-          title: 'Assignment: Two Pointers',
-          when: 'Tomorrow · 6:00 PM',
-          meta: '3 problems · graded',
-          tone: 'primary'
-        },
-        {
-          title: 'Live session: Big-O explained',
-          when: 'Thu · 5:00 PM',
-          meta: 'Join on time for Q&A',
-          tone: 'info'
-        }
-      ],
-      announcements: [
-        {
-          title: 'New course module released',
-          body: 'DSA Module 03 is now available with 8 new lessons and 12 practice problems.',
-          tone: 'success'
-        },
-        {
-          title: 'Profile checklist',
-          body: 'Add a short bio and preferred learning time to get smarter reminders.',
-          tone: 'primary'
-        }
-      ],
-      activity: [
-        {
-          title: 'Accepted: Two Sum',
-          meta: 'Practice · Easy · 1 hr ago',
-          tone: 'success'
-        },
-        {
-          title: 'Watched: Why Arrays Matter',
-          meta: 'Course · 3 hrs ago',
-          tone: 'info'
-        },
-        {
-          title: 'Started: Arrays Basics Quiz',
-          meta: 'Quiz · 1 day ago',
-          tone: 'warning'
-        }
-      ]
-    };
-  }, []);
 
-  const weeklyMax = useMemo(() => {
-    const list = stats?.weekly ?? [];
-    return list.reduce((max, d) => Math.max(max, d.minutes || 0), 0) || 1;
-  }, [stats]);
+  const continueCourse = useMemo(() => getContinueCourse(), []);
+
+  const kpis = useMemo(
+    () => [
+      {
+        key: 'active-courses',
+        label: 'Active courses',
+        value: studentSnapshot.activeCourses,
+        helper: 'Across frontend and DSA tracks',
+        tone: 'info'
+      },
+      {
+        key: 'avg-progress',
+        label: 'Average progress',
+        value: `${Math.round(
+          studentCourses.reduce(
+            (sum, c) => sum + Math.round((c.completedLessons / Math.max(c.totalLessons, 1)) * 100),
+            0
+          ) / Math.max(studentCourses.length, 1)
+        )}%`,
+        helper: 'All enrolled courses',
+        tone: 'success'
+      },
+      {
+        key: 'practice-solved',
+        label: 'Problems solved',
+        value: studentSnapshot.solvedProblems,
+        helper: `${studentSnapshot.solvedThisWeek} solved this week`,
+        tone: 'primary'
+      },
+      {
+        key: 'quiz-score',
+        label: 'Average quiz score',
+        value: `${studentSnapshot.averageQuizScore}%`,
+        helper: `${studentSnapshot.quizzesCompleted} quizzes completed`,
+        tone: 'warning'
+      }
+    ],
+    []
+  );
+
+  const weeklyMax = useMemo(
+    () => weeklyLearningMinutes.reduce((max, day) => Math.max(max, day.minutes || 0), 0) || 1,
+    []
+  );
+
+  const skillMap = useMemo(
+    () => [
+      { skill: 'Problem Solving', score: 72 },
+      { skill: 'Frontend Engineering', score: 68 },
+      { skill: 'Quiz Accuracy', score: 82 },
+      { skill: 'Consistency', score: 76 }
+    ],
+    []
+  );
 
   return (
     <div className="dashboard-page">
-      <header className="dashboard-hero">
+      <header className="dashboard-hero dashboard-hero--rich">
         <div className="dashboard-hero__left">
           <p className="dashboard-hero__eyebrow">Student overview</p>
-          <h2 className="dashboard-hero__title">
-            Welcome back{user?.name ? `, ${user.name}` : ''}.
-          </h2>
+          <h2 className="dashboard-hero__title">Welcome back{user?.name ? `, ${user.name}` : ''}</h2>
           <p className="muted dashboard-hero__subtitle">
-            Everything that matters today: progress, schedule, and quick actions in one clean view.
+            This workspace combines course progression, coding practice, quizzes, and milestones in one
+            clear workflow.
           </p>
+
           <div className="dashboard-hero__actions" role="group" aria-label="Quick actions">
             <Link to="/student/courses" className="btn btn--primary btn--small">
               Continue learning
             </Link>
             <Link to="/student/problems" className="btn btn--ghost btn--small">
-              Start practice
+              Open compiler
             </Link>
             <Link to="/student/quiz/q1" className="btn btn--ghost btn--small">
-              Take a quiz
+              Start quiz
             </Link>
           </div>
         </div>
 
-        <div className="dashboard-hero__right">
-          <div className="dashboard-hero__search">
-            <label className="dashboard-hero__search-label" htmlFor="dashboardSearch">
-              Search
-            </label>
-            <input
-              id="dashboardSearch"
-              type="search"
-              placeholder="Search courses, lessons, problems…"
-              className="dashboard-input"
-              autoComplete="off"
-            />
+        <aside className="card dashboard-focus" aria-label="Today plan">
+          <div className="dashboard-panel__header">
+            <div>
+              <h3>Today plan</h3>
+              <p className="muted">A focused sequence to keep momentum.</p>
+            </div>
+            <span className="pill pill--filter">3 steps</span>
           </div>
-          <div className="dashboard-pills">
-            <span className="pill pill--filter">Auto progress tracking</span>
-            <span className="pill pill--filter">Readable mode UI</span>
-            <span className="pill pill--filter">Real-time ready</span>
-          </div>
-        </div>
+
+          <ul className="dashboard-rows dashboard-plan">
+            <li className="dashboard-row">
+              <span className="dot dot--info" aria-hidden="true" />
+              <div className="dashboard-row__main">
+                <p className="dashboard-row__title">Watch next lesson</p>
+                <p className="muted">{continueCourse?.nextLessonTitle ?? 'Continue selected module'}</p>
+              </div>
+            </li>
+            <li className="dashboard-row">
+              <span className="dot dot--warning" aria-hidden="true" />
+              <div className="dashboard-row__main">
+                <p className="dashboard-row__title">Solve one medium problem</p>
+                <p className="muted">Target: 30 mins focused practice</p>
+              </div>
+            </li>
+            <li className="dashboard-row">
+              <span className="dot dot--success" aria-hidden="true" />
+              <div className="dashboard-row__main">
+                <p className="dashboard-row__title">Attempt checkpoint quiz</p>
+                <p className="muted">Aim for 70%+ to unlock next badge</p>
+              </div>
+            </li>
+          </ul>
+        </aside>
       </header>
 
       <section className="grid grid--3 dashboard-kpis" aria-label="Key performance indicators">
-        {(stats?.kpis ?? []).map((kpi) => (
+        {kpis.map((kpi) => (
           <div key={kpi.key} className={`card dashboard-kpi dashboard-kpi--${kpi.tone}`}>
             <div className="dashboard-kpi__top">
               <p className="stat-label">{kpi.label}</p>
               <span className={`dashboard-chip dashboard-chip--${kpi.tone}`} aria-hidden="true" />
             </div>
-            <p className="metric">
-              {kpi.value}
-              {kpi.suffix ?? ''}
-            </p>
+            <p className="metric">{kpi.value}</p>
             <p className="muted">{kpi.helper}</p>
           </div>
         ))}
@@ -181,43 +149,54 @@ const StudentDashboard = () => {
           <div className="dashboard-panel__header">
             <div>
               <h3>Continue learning</h3>
-              <p className="muted">Pick up right where you left off.</p>
+              <p className="muted">Resume your highest-priority course now.</p>
             </div>
-            <span className="dashboard-panel__meta muted">
-              Last seen: {stats?.continueLearning?.lastSeen ?? '—'}
-            </span>
+            <span className="dashboard-panel__meta muted">Last activity: {continueCourse?.lastActivity}</span>
           </div>
 
           <div className="dashboard-continue">
             <div className="dashboard-continue__main">
-              <p className="dashboard-continue__course">{stats?.continueLearning?.title}</p>
-              <p className="dashboard-continue__next muted">Next up: {stats?.continueLearning?.nextUp}</p>
+              <p className="dashboard-continue__course">{continueCourse?.title}</p>
+              <p className="dashboard-continue__next muted">Next up: {continueCourse?.nextLessonTitle}</p>
+              <div className="course-card__meta-row">
+                <span className="pill pill--filter">{continueCourse?.level}</span>
+                <span className="pill pill--filter">{continueCourse?.durationHours} hrs</span>
+                <span className="pill pill--filter">{continueCourse?.totalLessons} lessons</span>
+              </div>
             </div>
+
             <div className="dashboard-continue__side">
               <div className="dashboard-progress" aria-label="Course progress">
                 <div
                   className="dashboard-progress__bar"
-                  style={{ width: `${stats?.continueLearning?.progressPercent ?? 0}%` }}
+                  style={{
+                    width: `${Math.round(
+                      ((continueCourse?.completedLessons ?? 0) / Math.max(continueCourse?.totalLessons ?? 1, 1)) * 100
+                    )}%`
+                  }}
                 />
               </div>
               <div className="dashboard-continue__numbers">
                 <span className="dashboard-continue__percent">
-                  {stats?.continueLearning?.progressPercent ?? 0}%
+                  {Math.round(
+                    ((continueCourse?.completedLessons ?? 0) / Math.max(continueCourse?.totalLessons ?? 1, 1)) * 100
+                  )}%
                 </span>
-                <span className="muted">{stats?.continueLearning?.minutesLeft ?? 0} mins left today</span>
+                <span className="muted">
+                  {Math.max((continueCourse?.totalLessons ?? 0) - (continueCourse?.completedLessons ?? 0), 0)}
+                  {' '}
+                  lessons left
+                </span>
               </div>
             </div>
           </div>
 
           <div className="dashboard-panel__footer">
-            <Link
-              to={`/student/courses/${stats?.continueLearning?.courseId ?? 1}`}
-              className="btn btn--primary btn--small"
-            >
-              Resume course
+            <Link to={`/student/courses/${continueCourse?.id ?? 1}`} className="btn btn--primary btn--small">
+              Open learning workspace
             </Link>
-            <Link to="/student/courses" className="btn btn--ghost btn--small">
-              View all courses
+            <Link to="/student/problems" className="btn btn--ghost btn--small">
+              Practice related problems
             </Link>
           </div>
         </div>
@@ -226,19 +205,33 @@ const StudentDashboard = () => {
           <div className="dashboard-panel__header">
             <div>
               <h3>Weekly activity</h3>
-              <p className="muted">Minutes learned each day.</p>
+              <p className="muted">Minutes learned per day.</p>
             </div>
           </div>
 
           <div className="dashboard-weekly" role="img" aria-label="Weekly learning minutes bar chart">
-            {(stats?.weekly ?? []).map((d) => (
-              <div key={d.day} className="dashboard-weekly__item">
+            {weeklyLearningMinutes.map((day) => (
+              <div key={day.day} className="dashboard-weekly__item">
                 <div
                   className="dashboard-weekly__bar"
-                  style={{ height: `${Math.round((d.minutes / weeklyMax) * 100)}%` }}
-                  title={`${d.day}: ${d.minutes} mins`}
+                  style={{ height: `${Math.round((day.minutes / weeklyMax) * 100)}%` }}
+                  title={`${day.day}: ${day.minutes} mins`}
                 />
-                <div className="dashboard-weekly__label muted">{d.day}</div>
+                <div className="dashboard-weekly__label muted">{day.day}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="dashboard-skillmap" aria-label="Skill strengths">
+            {skillMap.map((item) => (
+              <div key={item.skill} className="dashboard-skillmap__row">
+                <div className="dashboard-skillmap__meta">
+                  <span>{item.skill}</span>
+                  <span className="muted">{item.score}%</span>
+                </div>
+                <div className="dashboard-progress dashboard-progress--slim">
+                  <div className="dashboard-progress__bar" style={{ width: `${item.score}%` }} />
+                </div>
               </div>
             ))}
           </div>
@@ -249,20 +242,21 @@ const StudentDashboard = () => {
         <div className="card dashboard-panel">
           <div className="dashboard-panel__header">
             <div>
-              <h3>Upcoming</h3>
-              <p className="muted">Deadlines and live sessions.</p>
+              <h3>Upcoming deadlines</h3>
+              <p className="muted">Classes, assignments, and quizzes in one list.</p>
             </div>
             <Link className="auth-link-button" to="/student/courses">
-              View schedule
+              View calendar
             </Link>
           </div>
+
           <ul className="dashboard-rows" aria-label="Upcoming list">
-            {(stats?.upcoming ?? []).map((item) => (
-              <li key={`${item.title}-${item.when}`} className="dashboard-row">
+            {studentDeadlines.map((item) => (
+              <li key={item.id} className="dashboard-row">
                 <span className={`dot dot--${item.tone}`} aria-hidden="true" />
                 <div className="dashboard-row__main">
                   <p className="dashboard-row__title">{item.title}</p>
-                  <p className="muted">{item.when}</p>
+                  <p className="muted">{item.due}</p>
                 </div>
                 <span className="dashboard-row__meta muted">{item.meta}</span>
               </li>
@@ -274,14 +268,14 @@ const StudentDashboard = () => {
           <div className="dashboard-panel__header">
             <div>
               <h3>Announcements</h3>
-              <p className="muted">Updates from your learning space.</p>
+              <p className="muted">Latest updates from mentors and platform team.</p>
             </div>
           </div>
           <div className="dashboard-announcements">
-            {(stats?.announcements ?? []).map((a) => (
-              <div key={a.title} className={`dashboard-note dashboard-note--${a.tone}`}>
-                <p className="dashboard-note__title">{a.title}</p>
-                <p className="muted">{a.body}</p>
+            {studentAnnouncements.map((note) => (
+              <div key={note.id} className={`dashboard-note dashboard-note--${note.tone}`}>
+                <p className="dashboard-note__title">{note.title}</p>
+                <p className="muted">{note.body}</p>
               </div>
             ))}
           </div>
@@ -297,17 +291,46 @@ const StudentDashboard = () => {
               Open practice
             </Link>
           </div>
+
           <ul className="dashboard-rows" aria-label="Recent activity list">
-            {(stats?.activity ?? []).map((a) => (
-              <li key={`${a.title}-${a.meta}`} className="dashboard-row">
-                <span className={`dot dot--${a.tone}`} aria-hidden="true" />
+            {studentActivityFeed.map((item) => (
+              <li key={item.id} className="dashboard-row">
+                <span className={`dot dot--${item.tone}`} aria-hidden="true" />
                 <div className="dashboard-row__main">
-                  <p className="dashboard-row__title">{a.title}</p>
-                  <p className="muted">{a.meta}</p>
+                  <p className="dashboard-row__title">{item.title}</p>
+                  <p className="muted">{item.meta}</p>
                 </div>
               </li>
             ))}
           </ul>
+        </div>
+      </section>
+
+      <section className="dashboard-recommendations" aria-label="Recommended tracks">
+        <div className="dashboard-panel__header">
+          <div>
+            <h3>Recommended next tracks</h3>
+            <p className="muted">Inspired by your current progress and learning goals.</p>
+          </div>
+          <Link className="auth-link-button" to="/student/courses">
+            Browse all tracks
+          </Link>
+        </div>
+
+        <div className="grid grid--3">
+          {recommendedTracks.map((track) => (
+            <article key={track.id} className="card dashboard-track-card">
+              <span className="pill pill--filter">{track.level}</span>
+              <h3>{track.title}</h3>
+              <p className="muted">{track.reason}</p>
+              <div className="dashboard-track-card__footer">
+                <span className="pill pill--filter">{track.duration}</span>
+                <button type="button" className="btn btn--ghost btn--small">
+                  Preview
+                </button>
+              </div>
+            </article>
+          ))}
         </div>
       </section>
     </div>
@@ -315,4 +338,3 @@ const StudentDashboard = () => {
 };
 
 export default StudentDashboard;
-

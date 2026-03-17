@@ -1,94 +1,84 @@
 import React, { useMemo, useState } from 'react';
-import { useAuth } from '../../context/useAuth.js';
 import { Link } from 'react-router-dom';
+import {
+  certificates,
+  getContinueCourse,
+  recommendedTracks,
+  studentCourses,
+  studentSnapshot
+} from './studentData.js';
+import './MyCourses.css';
 
 const MyCourses = () => {
-  const { user } = useAuth();
   const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState('all');
-
-  const items = useMemo(
-    () => [
-      {
-        id: 1,
-        courseId: 1,
-        courseTitle: 'JavaScript Fundamentals',
-        thumbnail: 'https://via.placeholder.com/600x240?text=JavaScript',
-        progressPercent: 75,
-        level: 'Beginner',
-        durationHours: 12,
-        lessons: 18,
-        lastActivity: 'Yesterday',
-        nextUp: 'Functions · Scope & Hoisting'
-      },
-      {
-        id: 2,
-        courseId: 2,
-        courseTitle: 'Data Structures & Algorithms',
-        thumbnail: 'https://via.placeholder.com/600x240?text=DSA',
-        progressPercent: 45,
-        level: 'Intermediate',
-        durationHours: 20,
-        lessons: 26,
-        lastActivity: 'Today',
-        nextUp: 'Stacks · Balanced Parentheses'
-      },
-      {
-        id: 3,
-        courseId: 3,
-        courseTitle: 'React Advanced Patterns',
-        thumbnail: 'https://via.placeholder.com/600x240?text=React',
-        progressPercent: 30,
-        level: 'Advanced',
-        durationHours: 10,
-        lessons: 14,
-        lastActivity: '2 days ago',
-        nextUp: 'Performance · Memoization'
-      }
-    ],
-    []
-  );
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [levelFilter, setLevelFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('progress-desc');
 
   const stats = useMemo(() => {
-    const active = items.length;
-    const avg = active
-      ? Math.round(items.reduce((sum, c) => sum + (c.progressPercent || 0), 0) / active)
-      : 0;
-    const inProgress = items.filter((c) => (c.progressPercent || 0) > 0 && (c.progressPercent || 0) < 100)
-      .length;
-    const completed = items.filter((c) => (c.progressPercent || 0) >= 100).length;
+    const active = studentCourses.length;
+    const avg =
+      active > 0
+        ? Math.round(
+            studentCourses.reduce(
+              (sum, item) => sum + Math.round((item.completedLessons / Math.max(item.totalLessons, 1)) * 100),
+              0
+            ) / active
+          )
+        : 0;
+    const inProgress = studentCourses.filter(
+      (course) => course.completedLessons > 0 && course.completedLessons < course.totalLessons
+    ).length;
+    const completed = studentCourses.filter((course) => course.completedLessons >= course.totalLessons).length;
+
     return { active, avg, inProgress, completed };
-  }, [items]);
+  }, []);
 
-  const continueCourse = useMemo(() => {
-    const sorted = [...items].sort((a, b) => (b.progressPercent || 0) - (a.progressPercent || 0));
-    return sorted[0] || null;
-  }, [items]);
+  const continueCourse = useMemo(() => getContinueCourse(), []);
 
-  const filtered = useMemo(() => {
+  const filteredCourses = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return items.filter((c) => {
-      const matchesQuery = !q || c.courseTitle.toLowerCase().includes(q);
-      const p = c.progressPercent || 0;
-      const matchesFilter =
-        filter === 'all' ||
-        (filter === 'inprogress' && p > 0 && p < 100) ||
-        (filter === 'notstarted' && p === 0) ||
-        (filter === 'completed' && p >= 100);
-      return matchesQuery && matchesFilter;
+
+    const list = studentCourses.filter((course) => {
+      const progressPercent = Math.round((course.completedLessons / Math.max(course.totalLessons, 1)) * 100);
+      const matchesQuery =
+        !q ||
+        course.title.toLowerCase().includes(q) ||
+        course.track.toLowerCase().includes(q) ||
+        course.instructor.toLowerCase().includes(q);
+
+      const matchesStatus =
+        statusFilter === 'all' ||
+        (statusFilter === 'inprogress' && progressPercent > 0 && progressPercent < 100) ||
+        (statusFilter === 'notstarted' && progressPercent === 0) ||
+        (statusFilter === 'completed' && progressPercent >= 100);
+
+      const matchesLevel = levelFilter === 'all' || course.level.toLowerCase() === levelFilter;
+
+      return matchesQuery && matchesStatus && matchesLevel;
     });
-  }, [items, query, filter]);
+
+    const sorted = [...list].sort((a, b) => {
+      const aProgress = Math.round((a.completedLessons / Math.max(a.totalLessons, 1)) * 100);
+      const bProgress = Math.round((b.completedLessons / Math.max(b.totalLessons, 1)) * 100);
+      if (sortBy === 'progress-asc') return aProgress - bProgress;
+      if (sortBy === 'duration-asc') return a.durationHours - b.durationHours;
+      if (sortBy === 'duration-desc') return b.durationHours - a.durationHours;
+      return bProgress - aProgress;
+    });
+
+    return sorted;
+  }, [levelFilter, query, sortBy, statusFilter]);
 
   return (
     <div className="my-courses-page">
       <header className="mycourses-hero">
         <div>
-          <p className="dashboard-hero__eyebrow">My learning</p>
-          <h2 className="mycourses-hero__title">
-            My Courses{user?.name ? ` · ${user.name}` : ''}
-          </h2>
+          <p className="dashboard-hero__eyebrow">Learning paths</p>
+          <h2 className="mycourses-hero__title">My Courses</h2>
           <p className="muted mycourses-hero__subtitle">
-            Manage active enrollments, resume lessons, and stay on track with a clear next-step plan.
+            Structured like modern LMS platforms: module-based progression, practical tasks, and clear
+            completion tracking.
           </p>
         </div>
 
@@ -102,21 +92,22 @@ const MyCourses = () => {
                 id="courseSearch"
                 type="search"
                 className="dashboard-input"
-                placeholder="Search by course title…"
+                placeholder="Search title, track, or instructor"
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(event) => setQuery(event.target.value)}
                 autoComplete="off"
               />
             </div>
+
             <div className="dashboard-hero__search">
-              <label className="dashboard-hero__search-label" htmlFor="courseFilter">
-                Filter
+              <label className="dashboard-hero__search-label" htmlFor="statusFilter">
+                Status
               </label>
               <select
-                id="courseFilter"
+                id="statusFilter"
                 className="mycourses-select"
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
               >
                 <option value="all">All</option>
                 <option value="inprogress">In progress</option>
@@ -124,12 +115,46 @@ const MyCourses = () => {
                 <option value="completed">Completed</option>
               </select>
             </div>
+
+            <div className="dashboard-hero__search">
+              <label className="dashboard-hero__search-label" htmlFor="levelFilter">
+                Level
+              </label>
+              <select
+                id="levelFilter"
+                className="mycourses-select"
+                value={levelFilter}
+                onChange={(event) => setLevelFilter(event.target.value)}
+              >
+                <option value="all">All levels</option>
+                <option value="beginner">Beginner</option>
+                <option value="intermediate">Intermediate</option>
+                <option value="advanced">Advanced</option>
+              </select>
+            </div>
+
+            <div className="dashboard-hero__search">
+              <label className="dashboard-hero__search-label" htmlFor="sortBy">
+                Sort
+              </label>
+              <select
+                id="sortBy"
+                className="mycourses-select"
+                value={sortBy}
+                onChange={(event) => setSortBy(event.target.value)}
+              >
+                <option value="progress-desc">Progress high to low</option>
+                <option value="progress-asc">Progress low to high</option>
+                <option value="duration-desc">Duration long to short</option>
+                <option value="duration-asc">Duration short to long</option>
+              </select>
+            </div>
           </div>
 
           <div className="dashboard-pills">
-            <span className="pill pill--filter">Progress tracking</span>
-            <span className="pill pill--filter">Resume where you left</span>
-            <span className="pill pill--filter">Next lesson highlighted</span>
+            <span className="pill pill--filter">Outcome-based modules</span>
+            <span className="pill pill--filter">Certificates</span>
+            <span className="pill pill--filter">Problem-linked lessons</span>
           </div>
         </div>
       </header>
@@ -141,204 +166,221 @@ const MyCourses = () => {
             <span className="dashboard-chip dashboard-chip--info" aria-hidden="true" />
           </div>
           <p className="metric">{stats.active}</p>
-          <p className="muted">Current enrollments in your dashboard.</p>
+          <p className="muted">Across frontend and problem-solving tracks.</p>
         </div>
+
         <div className="card dashboard-kpi dashboard-kpi--success">
           <div className="dashboard-kpi__top">
             <p className="stat-label">Average progress</p>
             <span className="dashboard-chip dashboard-chip--success" aria-hidden="true" />
           </div>
           <p className="metric">{stats.avg}%</p>
-          <p className="muted">Across all your courses.</p>
+          <p className="muted">Measured by completed lessons.</p>
         </div>
+
         <div className="card dashboard-kpi dashboard-kpi--primary">
           <div className="dashboard-kpi__top">
-            <p className="stat-label">In progress</p>
+            <p className="stat-label">Completed tracks</p>
             <span className="dashboard-chip dashboard-chip--primary" aria-hidden="true" />
           </div>
-          <p className="metric">{stats.inProgress}</p>
-          <p className="muted">Courses you started and can resume today.</p>
+          <p className="metric">{stats.completed}</p>
+          <p className="muted">{stats.inProgress} currently in progress.</p>
         </div>
       </section>
 
       <section className="mycourses-grid">
         <div className="mycourses-cardlist">
-          <div className="card dashboard-panel">
+          <article className="card dashboard-panel">
             <div className="dashboard-panel__header">
               <div>
                 <h3>Continue learning</h3>
-                <p className="muted">Your best next course based on progress.</p>
+                <p className="muted">Resume your highest-priority module.</p>
               </div>
-              {continueCourse && (
-                <span className="muted">Last activity: {continueCourse.lastActivity}</span>
-              )}
+              <span className="muted">Last activity: {continueCourse?.lastActivity}</span>
             </div>
 
             {continueCourse ? (
               <div className="course-card--wide">
                 <div>
-                  <p className="course-card__title">{continueCourse.courseTitle}</p>
-                  <p className="muted">Next up: {continueCourse.nextUp}</p>
+                  <p className="course-card__title">{continueCourse.title}</p>
+                  <p className="muted">Next up: {continueCourse.nextLessonTitle}</p>
+
                   <div className="course-card__meta-row">
                     <span className="pill pill--filter">{continueCourse.level}</span>
-                    <span className="pill pill--filter">{continueCourse.lessons} lessons</span>
                     <span className="pill pill--filter">{continueCourse.durationHours} hrs</span>
+                    <span className="pill pill--filter">{continueCourse.totalLessons} lessons</span>
+                    <span className="pill pill--filter">{continueCourse.projects} projects</span>
                   </div>
+
                   <div className="course-progress">
                     <div className="course-progress__top">
                       <span>Progress</span>
-                      <span className="muted">{continueCourse.progressPercent}%</span>
+                      <span className="muted">
+                        {Math.round(
+                          (continueCourse.completedLessons / Math.max(continueCourse.totalLessons, 1)) * 100
+                        )}
+                        %
+                      </span>
                     </div>
                     <div className="course-progress__bar" aria-label="Continue course progress bar">
                       <div
                         className="course-progress__fill"
-                        style={{ width: `${continueCourse.progressPercent}%` }}
+                        style={{
+                          width: `${Math.round(
+                            (continueCourse.completedLessons / Math.max(continueCourse.totalLessons, 1)) * 100
+                          )}%`
+                        }}
                       />
                     </div>
                   </div>
                 </div>
+
                 <div className="course-card__side">
-                  <Link
-                    to={`/student/courses/${continueCourse.courseId}`}
-                    className="btn btn--primary btn--small"
-                  >
-                    Resume course
+                  <Link to={`/student/courses/${continueCourse.id}`} className="btn btn--primary btn--small">
+                    Open workspace
                   </Link>
-                  <button className="btn btn--ghost btn--small" type="button">
-                    View syllabus
-                  </button>
+                  <Link to="/student/problems" className="btn btn--ghost btn--small">
+                    Solve linked problem
+                  </Link>
                 </div>
               </div>
             ) : (
-              <p className="muted">No courses yet.</p>
+              <p className="muted">No active course found.</p>
             )}
-          </div>
+          </article>
 
-          <div className="card dashboard-panel">
+          <article className="card dashboard-panel">
             <div className="dashboard-panel__header">
               <div>
-                <h3>All courses</h3>
-                <p className="muted">Search and filter your enrollments.</p>
+                <h3>All enrolled courses</h3>
+                <p className="muted">Detailed cards with module progress and outcomes.</p>
               </div>
-              <span className="muted">{filtered.length} shown</span>
+              <span className="muted">{filteredCourses.length} shown</span>
             </div>
 
             <div className="grid grid--3 dashboard-cards">
-              {filtered.map((item) => (
-                <div key={item.id} className="card course-card">
-                  {item.thumbnail && (
-                    <div className="course-thumb">
-                      <img src={item.thumbnail} alt={item.courseTitle} />
+              {filteredCourses.map((course) => {
+                const progressPercent = Math.round(
+                  (course.completedLessons / Math.max(course.totalLessons, 1)) * 100
+                );
+
+                return (
+                  <article key={course.id} className="card course-card">
+                    <div className="course-thumb course-thumb--gradient">
+                      <div className="course-thumb__inner">
+                        <p className="stat-label">{course.track}</p>
+                        <h4>{course.shortTitle}</h4>
+                      </div>
                     </div>
-                  )}
-                  <h3>{item.courseTitle}</h3>
-                  <p className="muted">Self‑paced with lessons, practice, and a final quiz.</p>
-                  <div className="course-card__meta-row">
-                    <span className="pill pill--filter">{item.level}</span>
-                    <span className="pill pill--filter">{item.lessons} lessons</span>
-                    <span className="pill pill--filter">{item.durationHours} hrs</span>
-                  </div>
-                  <div className="course-progress">
-                    <div className="course-progress__top">
-                      <span>Progress</span>
-                      <span className="muted">{item.progressPercent}%</span>
+
+                    <h3>{course.title}</h3>
+                    <p className="muted">{course.description}</p>
+
+                    <div className="course-card__meta-row">
+                      <span className="pill pill--filter">{course.level}</span>
+                      <span className="pill pill--filter">{course.instructor}</span>
+                      <span className="pill pill--filter">{course.rating} rating</span>
                     </div>
-                    <div className="course-progress__bar" aria-label={`${item.courseTitle} progress bar`}>
-                      <div
-                        className="course-progress__fill"
-                        style={{ width: `${item.progressPercent}%` }}
-                      />
+
+                    <div className="course-progress">
+                      <div className="course-progress__top">
+                        <span>
+                          {course.completedLessons} / {course.totalLessons} lessons
+                        </span>
+                        <span className="muted">{progressPercent}%</span>
+                      </div>
+                      <div className="course-progress__bar" aria-label={`${course.title} progress bar`}>
+                        <div className="course-progress__fill" style={{ width: `${progressPercent}%` }} />
+                      </div>
                     </div>
+
+                    <p className="muted course-card__next">Next: {course.nextLessonTitle}</p>
+
+                    <div className="course-card__actions">
+                      <Link to={`/student/courses/${course.id}`} className="btn btn--primary btn--small">
+                        Continue
+                      </Link>
+                      <button className="btn btn--ghost btn--small" type="button">
+                        Syllabus
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+
+            {filteredCourses.length === 0 && (
+              <div className="card course-empty">
+                <h3>No matching course</h3>
+                <p className="muted">Try changing filters or search terms.</p>
+              </div>
+            )}
+          </article>
+        </div>
+
+        <aside className="mycourses-side">
+          <section className="card dashboard-panel">
+            <div className="dashboard-panel__header">
+              <div>
+                <h3>Certification tracker</h3>
+                <p className="muted">Keep an eye on completion requirements.</p>
+              </div>
+            </div>
+
+            <div className="mycourses-certs">
+              {certificates.map((certificate) => (
+                <div key={certificate.id} className="mycourses-cert-card">
+                  <div className="mycourses-cert-card__top">
+                    <strong>{certificate.title}</strong>
+                    <span className="pill pill--filter">{certificate.status}</span>
                   </div>
-                  <p className="muted" style={{ marginTop: '0.6rem' }}>
-                    Next up: {item.nextUp}
-                  </p>
-                  <div className="course-card__actions">
-                    <Link
-                      to={`/student/courses/${item.courseId}`}
-                      className="btn btn--primary btn--small"
-                    >
-                      Continue
-                    </Link>
-                    <button className="btn btn--ghost btn--small" type="button">
-                      Syllabus
-                    </button>
+                  <p className="muted">{certificate.requirement}</p>
+                  <div className="course-progress__bar" aria-label={`${certificate.title} completion`}>
+                    <div className="course-progress__fill" style={{ width: `${certificate.progressPercent}%` }} />
                   </div>
+                  <p className="muted">{certificate.progressPercent}% complete</p>
                 </div>
               ))}
             </div>
+          </section>
 
-            {filtered.length === 0 && (
-              <div className="card course-empty">
-                <h3>No matches</h3>
-                <p className="muted">Try a different search text or switch the filter.</p>
+          <section className="card dashboard-panel">
+            <div className="dashboard-panel__header">
+              <div>
+                <h3>Suggested next tracks</h3>
+                <p className="muted">Based on your learning behavior.</p>
               </div>
-            )}
-          </div>
-        </div>
-
-        <aside className="card dashboard-panel">
-          <div className="dashboard-panel__header">
-            <div>
-              <h3>Next steps</h3>
-              <p className="muted">What a real LMS expects you to do.</p>
             </div>
-          </div>
 
-          <ul className="mycourses-checklist" aria-label="Next steps checklist">
-            <li className="mycourses-check">
-              <span className="dot dot--info" aria-hidden="true" />
-              <div>
-                <strong>Resume one lesson</strong>
-                <p className="muted">Finish the next lesson and take quick notes.</p>
-              </div>
-            </li>
-            <li className="mycourses-check">
-              <span className="dot dot--primary" aria-hidden="true" />
-              <div>
-                <strong>Practice immediately</strong>
-                <p className="muted">Solve 1–2 problems to lock the concept.</p>
-              </div>
-            </li>
-            <li className="mycourses-check">
-              <span className="dot dot--warning" aria-hidden="true" />
-              <div>
-                <strong>Attempt the quiz</strong>
-                <p className="muted">Quiz scores feed into your progress and mastery.</p>
-              </div>
-            </li>
-            <li className="mycourses-check">
-              <span className="dot dot--success" aria-hidden="true" />
-              <div>
-                <strong>Keep your streak alive</strong>
-                <p className="muted">One small activity daily beats long breaks.</p>
-              </div>
-            </li>
-          </ul>
+            <ul className="mycourses-checklist" aria-label="Recommended tracks">
+              {recommendedTracks.map((track) => (
+                <li key={track.id} className="mycourses-check">
+                  <span className="dot dot--info" aria-hidden="true" />
+                  <div>
+                    <strong>{track.title}</strong>
+                    <p className="muted">{track.reason}</p>
+                    <div className="course-card__meta-row">
+                      <span className="pill pill--filter">{track.level}</span>
+                      <span className="pill pill--filter">{track.duration}</span>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
 
-          <div className="dashboard-panel__footer">
-            <Link to="/student/dashboard" className="btn btn--ghost btn--small">
-              Back to dashboard
-            </Link>
-            <Link to="/student/problems" className="btn btn--primary btn--small">
-              Open practice
-            </Link>
-          </div>
+            <div className="dashboard-panel__footer">
+              <Link to="/student/dashboard" className="btn btn--ghost btn--small">
+                Back to dashboard
+              </Link>
+              <Link to="/student/problems" className="btn btn--primary btn--small">
+                Continue streak ({studentSnapshot.streakDays}d)
+              </Link>
+            </div>
+          </section>
         </aside>
       </section>
-
-      {items.length === 0 && (
-          <div className="card course-empty">
-            <h3>No courses yet</h3>
-            <p className="muted">
-              In a full build, this page would connect to the public course catalog. For now, use
-              the seeded demo enrollment.
-            </p>
-          </div>
-      )}
     </div>
   );
 };
 
 export default MyCourses;
-

@@ -1,0 +1,123 @@
+.profile-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.profile-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.profile-card input,
+.profile-card textarea {
+  border-radius: 0.75rem;
+  border: 1px solid var(--border-strong);
+  padding: 0.55rem 0.8rem;
+  background-color: var(--surface-soft);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.profile-card input:focus,
+.profile-card textarea:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 1px var(--accent-primary);
+}
+
+.profile-card textarea {
+  min-height: 110px;
+}
+
+.profile-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.profile-right {
+  display: grid;
+  gap: 1rem;
+}
+
+.profile-preferences {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.settings-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.profile-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.profile-summary {
+  text-align: center;
+}
+
+.profile-avatar {
+  width: 68px;
+  height: 68px;
+  border-radius: 999px;
+  background: var(--accent-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0.7rem auto 0.4rem;
+  font-weight: 700;
+  color: var(--text-on-accent);
+}
+
+.profile-name {
+  font-weight: 700;
+  font-size: 1.02rem;
+}
+
+.profile-email {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.profile-summary__tags {
+  justify-content: center;
+}
+
+.profile-skill-grid {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.profile-skill-row {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.profile-skill-row__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem;
+  font-size: 0.88rem;
+}
+
+.profile-course-strip {
+  margin-top: 0.8rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+@media (max-width: 768px) {
+  .profile-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

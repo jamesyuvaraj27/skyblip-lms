@@ -1,148 +1,252 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link, Route, Routes, useParams } from 'react-router-dom';
-import { useAuth } from '../../context/useAuth.js';
+import { getAllLessonsForCourse, getCourseById } from './studentData.js';
+import './LearningPage.css';
 
-// Mock lessons data
-const mockLessonsData = {
-  1: {
-    id: 1,
-    title: 'What Are Variables?',
-    content: 'Variables are containers for storing data values. In JavaScript, you can declare variables using let, const, or var keywords. Variables help you store and manage data throughout your program.',
-    videoUrl: 'https://via.placeholder.com/640x480?text=Lesson+1+Video'
-  },
-  2: {
-    id: 2,
-    title: 'Working with Arrays',
-    content: 'Arrays are used to store multiple values in a single variable. They are useful for grouping data of the same type. You can access elements using their index (0-based).',
-    videoUrl: 'https://via.placeholder.com/640x480?text=Lesson+2+Video'
-  },
-  3: {
-    id: 3,
-    title: 'Functions and Scope',
-    content: 'Functions are reusable blocks of code. They help you organize your code and make it more maintainable. Understanding scope is important for managing variable accessibility.',
-    videoUrl: 'https://via.placeholder.com/640x480?text=Lesson+3+Video'
-  }
-};
-
-// Mock course data
-const mockCoursesData = {
-  1: {
-    id: 1,
-    title: 'JavaScript Fundamentals',
-    description: 'Learn the basics of JavaScript programming from scratch.',
-    modules: [
-      {
-        id: 1,
-        title: 'Module 1: Getting Started',
-        lessons: [
-          { id: 1, title: 'What Are Variables?' },
-          { id: 2, title: 'Working with Arrays' }
-        ]
-      },
-      {
-        id: 2,
-        title: 'Module 2: Advanced Topics',
-        lessons: [
-          { id: 3, title: 'Functions and Scope' }
-        ]
-      }
-    ]
-  },
-  2: {
-    id: 2,
-    title: 'Data Structures & Algorithms',
-    description: 'Master DSA concepts for coding interviews.',
-    modules: [
-      {
-        id: 3,
-        title: 'Module 1: Basics',
-        lessons: [
-          { id: 4, title: 'What is Big O?' }
-        ]
-      }
-    ]
-  }
-};
-
-const LessonDetail = ({ lessonId }) => {
-  const lesson = useMemo(
-    () => mockLessonsData[lessonId] || mockLessonsData[1],
-    [lessonId]
-  );
-
-  if (!lesson) return <div>Select a lesson to start learning.</div>;
+const LessonContent = ({ course, lesson, lessonIndex, lessonCount, notes, onNotesChange }) => {
+  const prevLesson = lessonIndex > 0 ? getAllLessonsForCourse(course)[lessonIndex - 1] : null;
+  const nextLesson = lessonIndex < lessonCount - 1 ? getAllLessonsForCourse(course)[lessonIndex + 1] : null;
 
   return (
     <div className="lesson-pane">
-      <h3>{lesson.title}</h3>
-      {lesson.videoUrl && (
-        <video className="lesson-video" src={lesson.videoUrl} controls controlsList="nodownload" />
-      )}
-      <p className="muted">{lesson.content}</p>
+      <header className="learning-lesson-header">
+        <div>
+          <p className="dashboard-hero__eyebrow">Lesson</p>
+          <h2>{lesson.title}</h2>
+          <p className="muted">{lesson.summary}</p>
+        </div>
+        <div className="learning-lesson-header__meta">
+          <span className="pill pill--filter">{lesson.type}</span>
+          <span className="pill pill--filter">{lesson.minutes} mins</span>
+          <span className={`pill ${lesson.completed ? 'pill--success' : 'pill--filter'}`}>
+            {lesson.completed ? 'Completed' : 'Pending'}
+          </span>
+        </div>
+      </header>
+
+      <div className="learning-content-grid">
+        <article className="card learning-content-block">
+          <h3>Lesson Brief</h3>
+          <p className="muted">
+            This lesson focuses on practical understanding and coding readiness. Follow the checklist,
+            then solve the related problem in the workspace.
+          </p>
+
+          <video
+            className="lesson-video"
+            src={`https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4`}
+            controls
+            controlsList="nodownload"
+          />
+
+          <div className="learning-resources">
+            <h4>Resources</h4>
+            <ul>
+              {(lesson.resources ?? []).map((resource) => (
+                <li key={resource}>{resource}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="learning-nav-actions">
+            {prevLesson ? (
+              <Link
+                className="btn btn--ghost btn--small"
+                to={`/student/courses/${course.id}/lesson/${prevLesson.id}`}
+              >
+                Previous lesson
+              </Link>
+            ) : (
+              <span />
+            )}
+            {nextLesson ? (
+              <Link
+                className="btn btn--primary btn--small"
+                to={`/student/courses/${course.id}/lesson/${nextLesson.id}`}
+              >
+                Next lesson
+              </Link>
+            ) : (
+              <Link className="btn btn--primary btn--small" to="/student/quiz/q2">
+                Attempt checkpoint quiz
+              </Link>
+            )}
+          </div>
+        </article>
+
+        <aside className="card learning-side-panel">
+          <h3>Lesson Checklist</h3>
+          <ul className="mycourses-checklist" aria-label="Lesson checklist">
+            <li className="mycourses-check">
+              <span className="dot dot--info" aria-hidden="true" />
+              <div>
+                <strong>Watch full lesson</strong>
+                <p className="muted">Avoid skipping key examples and edge cases.</p>
+              </div>
+            </li>
+            <li className="mycourses-check">
+              <span className="dot dot--warning" aria-hidden="true" />
+              <div>
+                <strong>Take quick notes</strong>
+                <p className="muted">Capture one reusable template from this lesson.</p>
+              </div>
+            </li>
+            <li className="mycourses-check">
+              <span className="dot dot--success" aria-hidden="true" />
+              <div>
+                <strong>Practice immediately</strong>
+                <p className="muted">Solve one related problem while the concept is fresh.</p>
+              </div>
+            </li>
+          </ul>
+
+          <div className="learning-side-panel__actions">
+            <Link className="btn btn--ghost btn--small" to="/student/problems">
+              Open compiler
+            </Link>
+            <Link className="btn btn--primary btn--small" to="/student/quiz/q1">
+              Quiz checkpoint
+            </Link>
+          </div>
+        </aside>
+      </div>
+
+      <section className="card learning-notes">
+        <div className="dashboard-panel__header">
+          <div>
+            <h3>My Lesson Notes</h3>
+            <p className="muted">Saved locally for quick revision while practicing.</p>
+          </div>
+          <span className="pill pill--filter">XP reward: {lesson.xp}</span>
+        </div>
+
+        <textarea
+          className="learning-notes__editor"
+          value={notes}
+          onChange={(event) => onNotesChange(event.target.value)}
+          placeholder="Write key points, edge cases, and coding template here..."
+        />
+      </section>
     </div>
+  );
+};
+
+const LessonRouteWrapper = ({ course, initialLesson, notesByLesson, setNotesByLesson }) => {
+  const { lessonId } = useParams();
+  const lessons = useMemo(() => getAllLessonsForCourse(course), [course]);
+  const activeLesson = lessons.find((lesson) => lesson.id === lessonId) ?? initialLesson;
+  const lessonIndex = lessons.findIndex((lesson) => lesson.id === activeLesson.id);
+
+  return (
+    <LessonContent
+      course={course}
+      lesson={activeLesson}
+      lessonIndex={lessonIndex < 0 ? 0 : lessonIndex}
+      lessonCount={lessons.length}
+      notes={notesByLesson[activeLesson.id] ?? ''}
+      onNotesChange={(next) =>
+        setNotesByLesson((prev) => ({
+          ...prev,
+          [activeLesson.id]: next
+        }))
+      }
+    />
   );
 };
 
 const LearningPage = () => {
   const { courseId } = useParams();
-  useAuth();
-  const course = useMemo(
-    () => mockCoursesData[courseId] || mockCoursesData[1],
-    [courseId]
-  );
+  const course = useMemo(() => getCourseById(courseId) ?? getCourseById('1'), [courseId]);
 
-  if (!course) return <div>Loading course...</div>;
+  const lessons = useMemo(() => getAllLessonsForCourse(course), [course]);
+  const initialLesson = lessons.find((lesson) => lesson.id === course.nextLessonId) ?? lessons[0];
+  const [notesByLesson, setNotesByLesson] = useState({});
 
-  const firstLessonId =
-    course.modules?.[0]?.lessons && course.modules[0].lessons[0]
-      ? course.modules[0].lessons[0].id
-      : null;
+  if (!course || !initialLesson) return <div>Loading learning workspace...</div>;
+
+  const completedLessons = lessons.filter((lesson) => lesson.completed).length;
 
   return (
     <div className="learning-layout">
       <aside className="learning-sidebar">
-        <h2>{course.title}</h2>
-        <p className="muted">{course.description}</p>
-        <div className="learning-tags">
-          <span>🎥 Video-first</span>
-          <span>🧩 Linked problems</span>
-          <span>📝 Notes-friendly layout</span>
+        <div className="learning-sidebar__header">
+          <p className="dashboard-hero__eyebrow">Course workspace</p>
+          <h2>{course.shortTitle}</h2>
+          <p className="muted">{course.description}</p>
         </div>
+
+        <div className="learning-tags">
+          <span>{course.level}</span>
+          <span>{course.durationHours} hrs</span>
+          <span>{course.projects} projects</span>
+        </div>
+
+        <div className="learning-progress-block">
+          <div className="course-progress__top">
+            <span>Overall progress</span>
+            <span className="muted">
+              {completedLessons}/{lessons.length} lessons
+            </span>
+          </div>
+          <div className="course-progress__bar" aria-label="Course progress">
+            <div
+              className="course-progress__fill"
+              style={{ width: `${Math.round((completedLessons / Math.max(lessons.length, 1)) * 100)}%` }}
+            />
+          </div>
+        </div>
+
         <div className="modules">
-          {course.modules?.map((mod) => (
-            <div key={mod.id} className="module">
-              <h4>{mod.title}</h4>
+          {course.modules.map((module) => (
+            <section key={module.id} className="module">
+              <div className="module__header">
+                <h4>{module.title}</h4>
+                <span className="pill pill--filter">{module.progressPercent}%</span>
+              </div>
               <ul>
-                {mod.lessons?.map((lesson) => (
+                {module.lessons.map((lesson) => (
                   <li key={lesson.id}>
-                    <Link to={`lesson/${lesson.id}`}>{lesson.title}</Link>
+                    <Link to={`lesson/${lesson.id}`}>
+                      <span>{lesson.title}</span>
+                      <span className="muted">{lesson.minutes}m</span>
+                    </Link>
                   </li>
                 ))}
               </ul>
-            </div>
+            </section>
           ))}
         </div>
       </aside>
+
       <section className="learning-main">
         <Routes>
           <Route
-            path="/"
+            index
             element={
-              firstLessonId ? (
-                <LessonDetail lessonId={firstLessonId} />
-              ) : (
-                <div>No lessons configured for this course yet.</div>
-              )
+              <LessonContent
+                course={course}
+                lesson={initialLesson}
+                lessonIndex={lessons.findIndex((lesson) => lesson.id === initialLesson.id)}
+                lessonCount={lessons.length}
+                notes={notesByLesson[initialLesson.id] ?? ''}
+                onNotesChange={(next) =>
+                  setNotesByLesson((prev) => ({
+                    ...prev,
+                    [initialLesson.id]: next
+                  }))
+                }
+              />
             }
           />
           <Route
             path="lesson/:lessonId"
             element={
-              <LessonRouteWrapper>
-                {(lessonId) => (
-                  <LessonDetail lessonId={lessonId} />
-                )}
-              </LessonRouteWrapper>
+              <LessonRouteWrapper
+                course={course}
+                initialLesson={initialLesson}
+                notesByLesson={notesByLesson}
+                setNotesByLesson={setNotesByLesson}
+              />
             }
           />
         </Routes>
@@ -151,10 +255,4 @@ const LearningPage = () => {
   );
 };
 
-const LessonRouteWrapper = ({ children }) => {
-  const { lessonId } = useParams();
-  return children(lessonId);
-};
-
 export default LearningPage;
-
