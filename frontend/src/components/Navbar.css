@@ -1,0 +1,115 @@
+.landing__nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  width: min(1200px, 100% - 3rem);
+  margin: 0.95rem auto 0;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  background: rgba(8, 15, 29, 0.72);
+  backdrop-filter: blur(12px);
+}
+
+#how-it-works,
+#practice,
+#roles {
+  scroll-margin-top: 110px;
+}
+
+.landing__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.landing__brand-mark {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.45rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.85rem;
+  background: linear-gradient(145deg, #5eead4, #22d3ee, #3b82f6);
+  color: #051421;
+}
+
+.landing__logo {
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.92rem;
+}
+
+.landing__nav-links {
+  display: flex;
+  gap: 1.3rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.landing__nav-links a {
+  color: var(--text-secondary);
+  position: relative;
+}
+
+.landing__nav-links a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -0.3rem;
+  width: 0;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #22d3ee, #60a5fa);
+  transition: width 0.2s ease;
+}
+
+.landing__nav-links a:hover {
+  color: var(--text-primary);
+}
+
+.landing__nav-links a:hover::after {
+  width: 100%;
+}
+
+.landing__nav-cta {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+@media (max-width: 900px) {
+  .landing__nav {
+    width: min(1200px, 100% - 1.6rem);
+  }
+
+  .landing__nav-links {
+    display: none;
+  }
+}
+
+@media (max-width: 620px) {
+  .landing__nav {
+    padding: 0.55rem 0.65rem;
+  }
+
+  .landing__logo {
+    font-size: 0.82rem;
+  }
+
+  .landing__nav-cta .btn {
+    padding-inline: 0.9rem;
+  }
+}

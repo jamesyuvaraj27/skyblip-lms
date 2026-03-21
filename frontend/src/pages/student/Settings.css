@@ -1,0 +1,75 @@
+.settings-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.settings-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.settings-card input {
+  border-radius: 0.75rem;
+  border: 1px solid var(--border-strong);
+  padding: 0.55rem 0.8rem;
+  background-color: var(--surface-soft);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.settings-card input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 1px var(--accent-primary);
+}
+
+.settings-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.settings-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.settings-actions {
+  margin-top: 0.55rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.settings-side {
+  height: fit-content;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.settings-preview {
+  border-style: dashed;
+  background-color: var(--surface-soft);
+}
+
+.settings-preview__theme {
+  font-weight: 650;
+  margin: 0.2rem 0;
+}
+
+.settings-message {
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.8rem;
+  border: 1px solid var(--border-soft);
+  background-color: var(--surface-soft);
+}
+
+@media (max-width: 950px) {
+  .settings-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
